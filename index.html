@@ -217,6 +217,21 @@ function baixarPDFSessao(){
   }catch(e){ toast('Erro ao gerar PDF.','error'); }
 }
 
+
+function fazerLogout(){
+  if(!confirm('Deseja sair da sua conta?')) return;
+  supa.auth.signOut().then(()=>{
+    DB.del('user');
+    document.getElementById('app').style.display='none';
+    document.getElementById('mob-nav').style.display='none';
+    document.getElementById('screen-login').style.display='flex';
+    document.getElementById('l-email').value='';
+    document.getElementById('l-senha').value='';
+    pacientes=[];consultas=[];sessoes=[];pagamentos=[];pacAtual=null;usuarioId=null;
+    toast('Até logo!','success');
+  });
+}
+
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 // ═══════════════════════ GRAVAÇÃO ═══════════════════════
@@ -426,6 +441,21 @@ function baixarPDFSessao(){
     doc.save('sessao-psion-'+Date.now()+'.pdf');
     toast('PDF baixado!','success');
   }catch(e){ toast('Erro ao gerar PDF.','error'); }
+}
+
+
+function fazerLogout(){
+  if(!confirm('Deseja sair da sua conta?')) return;
+  supa.auth.signOut().then(()=>{
+    DB.del('user');
+    document.getElementById('app').style.display='none';
+    document.getElementById('mob-nav').style.display='none';
+    document.getElementById('screen-login').style.display='flex';
+    document.getElementById('l-email').value='';
+    document.getElementById('l-senha').value='';
+    pacientes=[];consultas=[];sessoes=[];pagamentos=[];pacAtual=null;usuarioId=null;
+    toast('Até logo!','success');
+  });
 }
 
 </script>
@@ -682,7 +712,15 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <button class="s-btn" onclick="sw('relatorios')"><i class="ti ti-file-text"></i>Relatórios</button>
     <button class="s-btn" onclick="sw('ia')"><i class="ti ti-brain"></i>Assistente IA</button>
   </nav>
-  <div class="s-footer"><div class="s-user"><div class="s-av" id="sidebar-av">DR</div><div><div style="font-size:14px;color:white;font-weight:500" id="sidebar-nome">Dra. Psicóloga</div><div style="font-size:11px;color:rgba(255,255,255,0.5)" id="sidebar-crp">CRP 12/00000</div></div></div></div>
+  <div class="s-footer">
+    <div class="s-user">
+      <div class="s-av" id="sidebar-av">DR</div>
+      <div style="flex:1"><div style="font-size:14px;color:white;font-weight:500" id="sidebar-nome">Dra. Psicóloga</div><div style="font-size:11px;color:rgba(255,255,255,0.5)" id="sidebar-crp">CRP 12/00000</div></div>
+    </div>
+    <button onclick="fazerLogout()" style="margin-top:14px;width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px;color:rgba(255,255,255,0.7);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s" onmouseover="this.style.background='rgba(255,255,255,0.15)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,0.08)';this.style.color='rgba(255,255,255,0.7)'">
+      <i class="ti ti-logout" style="font-size:16px"></i> Sair da conta
+    </button>
+  </div>
 </div>
 <div class="main">
 
@@ -1691,6 +1729,21 @@ function baixarPDFSessao(){
     doc.save('sessao-psion-'+Date.now()+'.pdf');
     toast('PDF baixado!','success');
   }catch(e){ toast('Erro ao gerar PDF.','error'); }
+}
+
+
+function fazerLogout(){
+  if(!confirm('Deseja sair da sua conta?')) return;
+  supa.auth.signOut().then(()=>{
+    DB.del('user');
+    document.getElementById('app').style.display='none';
+    document.getElementById('mob-nav').style.display='none';
+    document.getElementById('screen-login').style.display='flex';
+    document.getElementById('l-email').value='';
+    document.getElementById('l-senha').value='';
+    pacientes=[];consultas=[];sessoes=[];pagamentos=[];pacAtual=null;usuarioId=null;
+    toast('Até logo!','success');
+  });
 }
 
 </script>
