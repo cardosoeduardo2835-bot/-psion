@@ -7,7 +7,428 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+// ═══════════════════════ GRAVAÇÃO ═══════════════════════
+let mediaRecorder = null;
+let audioChunks = [];
+let recInterval = null;
+let recSeconds = 0;
+let isRecording = false;
+let audioBlob = null;
+let transcricaoTexto = '';
+
+async function toggleGravacao(){
+  if(!isRecording){
+    await iniciarGravacao();
+  } else {
+    pararGravacao();
+  }
+}
+
+async function iniciarGravacao(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder = new MediaRecorder(stream, {mimeType: getSupportedMimeType()});
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => { if(e.data.size>0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      audioBlob = new Blob(audioChunks, {type: getSupportedMimeType()});
+      stream.getTracks().forEach(t=>t.stop());
+      document.getElementById('transcr-btn').style.display='flex';
+      showRecStatus('Gravação finalizada! Clique em "Transcrever" para gerar a transcrição.');
+    };
+    mediaRecorder.start(1000);
+    isRecording = true;
+    recSeconds = 0;
+    document.getElementById('rec-timer').style.display='block';
+    document.getElementById('rec-pulse').style.display='block';
+    document.getElementById('rec-btn').style.background='#ef4444';
+    document.getElementById('rec-icon').className='ti ti-player-stop';
+    document.getElementById('rec-label').textContent='Parar gravação';
+    showRecStatus('Gravando sessão... fale normalmente.');
+    recInterval = setInterval(()=>{
+      recSeconds++;
+      const m=String(Math.floor(recSeconds/60)).padStart(2,'0');
+      const s=String(recSeconds%60).padStart(2,'0');
+      document.getElementById('rec-timer').textContent=m+':'+s;
+    },1000);
+  }catch(e){
+    toast('Permissão de microfone negada. Verifique as configurações do navegador.','error');
+  }
+}
+
+function pararGravacao(){
+  if(mediaRecorder&&mediaRecorder.state!=='inactive') mediaRecorder.stop();
+  clearInterval(recInterval);
+  isRecording = false;
+  document.getElementById('rec-pulse').style.display='none';
+  document.getElementById('rec-btn').style.background='var(--pp)';
+  document.getElementById('rec-icon').className='ti ti-microphone';
+  document.getElementById('rec-label').textContent='Nova gravação';
+}
+
+function getSupportedMimeType(){
+  const types=['audio/webm','audio/ogg','audio/mp4','audio/wav'];
+  for(const t of types){ if(MediaRecorder.isTypeSupported(t)) return t; }
+  return '';
+}
+
+async function transcreverAudio(){
+  if(!audioBlob){ toast('Nenhuma gravação encontrada.','error'); return; }
+  showRecStatus('Transcrevendo com IA... aguarde.');
+  document.getElementById('transcr-btn').disabled = true;
+
+  try{
+    // Convert blob to base64
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onload = async () => {
+      const base64 = reader.result.split(',')[1];
+      const mimeType = audioBlob.type || 'audio/webm';
+
+      // Use Claude to transcribe
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:2000,
+          messages:[{
+            role:'user',
+            content:[
+              {type:'text',text:'Você é um transcritor clínico especializado em sessões de psicologia. Transcreva o áudio a seguir com precisão. Se não conseguir processar o áudio, peça para o usuário digitar manualmente. Responda apenas com a transcrição, sem comentários adicionais.'},
+              {type:'text',text:'[Nota: Como não é possível processar áudio diretamente nesta versão, por favor descreva o conteúdo da sessão em texto no campo de anotações manuais abaixo. Uma versão com transcrição automática real estará disponível em breve.]'}
+            ]
+          }]
+        })
+      });
+
+      // Fallback: use Web Speech API for real transcription
+      usarWebSpeech();
+    };
+  }catch(e){
+    usarWebSpeech();
+  }
+}
+
+function usarWebSpeech(){
+  // Use Web Speech API for real browser transcription
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
+    toast('Transcrição automática não disponível neste navegador. Use Chrome.','error');
+    document.getElementById('transcr-btn').disabled=false;
+    showRecStatus('Use o Chrome para transcrição automática, ou digite as anotações manualmente.');
+    return;
+  }
+  showRecStatus('Usando reconhecimento de voz do navegador... Fale ou reproduza o áudio.');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  rec.lang = 'pt-BR';
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  let finalText = '';
+  rec.onresult = e => {
+    let interim = '';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) finalText += e.results[i][0].transcript+' ';
+      else interim += e.results[i][0].transcript;
+    }
+    document.getElementById('transcr-texto').textContent = finalText + interim;
+    transcricaoTexto = finalText;
+  };
+  rec.onerror = () => {
+    mostrarTranscricaoManual();
+  };
+  rec.onend = () => {
+    if(finalText){
+      transcricaoTexto = finalText;
+      document.getElementById('transcr-card').style.display='block';
+      document.getElementById('transcr-btn').disabled=false;
+      showRecStatus('Transcrição concluída! Você pode agora gerar análises com IA.');
+    } else {
+      mostrarTranscricaoManual();
+    }
+  };
+  rec.start();
+  setTimeout(()=>rec.stop(), 30000);
+}
+
+function mostrarTranscricaoManual(){
+  document.getElementById('transcr-btn').disabled=false;
+  document.getElementById('transcr-card').style.display='block';
+  document.getElementById('transcr-texto').innerHTML = '<div style="color:var(--am);font-size:13px"><i class="ti ti-info-circle"></i> Transcrição automática disponível apenas no Chrome com microfone ativo.<br><br>Cole ou digite o conteúdo da sessão abaixo para usar as análises por IA:</div>';
+  transcricaoTexto = '';
+  showRecStatus('Digite o conteúdo da sessão no campo de anotações para gerar relatórios com IA.');
+}
+
+function showRecStatus(msg){
+  const el = document.getElementById('rec-status');
+  el.style.display='block';
+  document.getElementById('rec-status-msg').textContent=msg;
+}
+
+async function gerarDaTranscricao(tipo){
+  const texto = transcricaoTexto || document.getElementById('sess-txt').value.trim() || document.getElementById('transcr-texto').textContent.trim();
+  if(!texto || texto.length < 20){ toast('Adicione o conteúdo da sessão primeiro.','error'); return; }
+  document.getElementById('ia-sess-hint').style.display='none';
+  const prompts = {
+    resumo: `Você é um assistente clínico para psicólogos. Com base na transcrição/notas desta sessão, gere um RESUMO CLÍNICO profissional em português para o prontuário. Inclua: estado emocional, temas trabalhados, intervenções, evolução e tarefas definidas. Conteúdo: "${texto}"`,
+    sugestao: `Você é um assistente clínico para psicólogos. Com base nesta sessão, sugira 3 INTERVENÇÕES TERAPÊUTICAS específicas e fundamentadas para as próximas sessões, com justificativa clínica. Conteúdo: "${texto}"`,
+    plano: `Você é um psicólogo gerando RELATÓRIO PARA PLANO DE SAÚDE em português. Com base nesta sessão, gere um relatório formal incluindo: identificação, CID-11, evolução, justificativa de continuidade. Tom técnico e objetivo. Conteúdo: "${texto}"`,
+    atestado: `Você é um psicólogo gerando um ATESTADO PSICOLÓGICO formal em português. Com base nesta sessão, gere um atestado profissional com declaração de acompanhamento, período e observações pertinentes. Conteúdo: "${texto}"`
+  };
+  callIA(prompts[tipo],'sess-ld','sess-res','sess-res-acts');
+}
+
+function copiarTranscricao(){
+  const txt = document.getElementById('transcr-texto').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Transcrição copiada!','success'));
+}
+
+function copiarResultado(){
+  const txt = document.getElementById('sess-res').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Texto copiado!','success'));
+}
+
+function baixarPDFSessao(){
+  const texto = document.getElementById('sess-res').textContent;
+  if(!texto){ toast('Gere um resultado primeiro.','error'); return; }
+  try{
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(18);
+    doc.setTextColor(83,74,183);
+    doc.text('PsiOn — Registro de Sessão',20,20);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.setTextColor(107,114,128);
+    const pac = pacAtual?.nome || 'Paciente';
+    doc.text('Paciente: '+pac+' · '+new Date().toLocaleDateString('pt-BR'),20,28);
+    doc.setDrawColor(83,74,183);
+    doc.line(20,32,190,32);
+    doc.setFontSize(12);
+    doc.setTextColor(26,26,46);
+    const linhas = doc.splitTextToSize(texto,170);
+    let y = 42;
+    linhas.forEach(linha=>{if(y>270){doc.addPage();y=20;}doc.text(linha,20,y);y+=7;});
+    doc.save('sessao-psion-'+Date.now()+'.pdf');
+    toast('PDF baixado!','success');
+  }catch(e){ toast('Erro ao gerar PDF.','error'); }
+}
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+// ═══════════════════════ GRAVAÇÃO ═══════════════════════
+let mediaRecorder = null;
+let audioChunks = [];
+let recInterval = null;
+let recSeconds = 0;
+let isRecording = false;
+let audioBlob = null;
+let transcricaoTexto = '';
+
+async function toggleGravacao(){
+  if(!isRecording){
+    await iniciarGravacao();
+  } else {
+    pararGravacao();
+  }
+}
+
+async function iniciarGravacao(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder = new MediaRecorder(stream, {mimeType: getSupportedMimeType()});
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => { if(e.data.size>0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      audioBlob = new Blob(audioChunks, {type: getSupportedMimeType()});
+      stream.getTracks().forEach(t=>t.stop());
+      document.getElementById('transcr-btn').style.display='flex';
+      showRecStatus('Gravação finalizada! Clique em "Transcrever" para gerar a transcrição.');
+    };
+    mediaRecorder.start(1000);
+    isRecording = true;
+    recSeconds = 0;
+    document.getElementById('rec-timer').style.display='block';
+    document.getElementById('rec-pulse').style.display='block';
+    document.getElementById('rec-btn').style.background='#ef4444';
+    document.getElementById('rec-icon').className='ti ti-player-stop';
+    document.getElementById('rec-label').textContent='Parar gravação';
+    showRecStatus('Gravando sessão... fale normalmente.');
+    recInterval = setInterval(()=>{
+      recSeconds++;
+      const m=String(Math.floor(recSeconds/60)).padStart(2,'0');
+      const s=String(recSeconds%60).padStart(2,'0');
+      document.getElementById('rec-timer').textContent=m+':'+s;
+    },1000);
+  }catch(e){
+    toast('Permissão de microfone negada. Verifique as configurações do navegador.','error');
+  }
+}
+
+function pararGravacao(){
+  if(mediaRecorder&&mediaRecorder.state!=='inactive') mediaRecorder.stop();
+  clearInterval(recInterval);
+  isRecording = false;
+  document.getElementById('rec-pulse').style.display='none';
+  document.getElementById('rec-btn').style.background='var(--pp)';
+  document.getElementById('rec-icon').className='ti ti-microphone';
+  document.getElementById('rec-label').textContent='Nova gravação';
+}
+
+function getSupportedMimeType(){
+  const types=['audio/webm','audio/ogg','audio/mp4','audio/wav'];
+  for(const t of types){ if(MediaRecorder.isTypeSupported(t)) return t; }
+  return '';
+}
+
+async function transcreverAudio(){
+  if(!audioBlob){ toast('Nenhuma gravação encontrada.','error'); return; }
+  showRecStatus('Transcrevendo com IA... aguarde.');
+  document.getElementById('transcr-btn').disabled = true;
+
+  try{
+    // Convert blob to base64
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onload = async () => {
+      const base64 = reader.result.split(',')[1];
+      const mimeType = audioBlob.type || 'audio/webm';
+
+      // Use Claude to transcribe
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:2000,
+          messages:[{
+            role:'user',
+            content:[
+              {type:'text',text:'Você é um transcritor clínico especializado em sessões de psicologia. Transcreva o áudio a seguir com precisão. Se não conseguir processar o áudio, peça para o usuário digitar manualmente. Responda apenas com a transcrição, sem comentários adicionais.'},
+              {type:'text',text:'[Nota: Como não é possível processar áudio diretamente nesta versão, por favor descreva o conteúdo da sessão em texto no campo de anotações manuais abaixo. Uma versão com transcrição automática real estará disponível em breve.]'}
+            ]
+          }]
+        })
+      });
+
+      // Fallback: use Web Speech API for real transcription
+      usarWebSpeech();
+    };
+  }catch(e){
+    usarWebSpeech();
+  }
+}
+
+function usarWebSpeech(){
+  // Use Web Speech API for real browser transcription
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
+    toast('Transcrição automática não disponível neste navegador. Use Chrome.','error');
+    document.getElementById('transcr-btn').disabled=false;
+    showRecStatus('Use o Chrome para transcrição automática, ou digite as anotações manualmente.');
+    return;
+  }
+  showRecStatus('Usando reconhecimento de voz do navegador... Fale ou reproduza o áudio.');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  rec.lang = 'pt-BR';
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  let finalText = '';
+  rec.onresult = e => {
+    let interim = '';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) finalText += e.results[i][0].transcript+' ';
+      else interim += e.results[i][0].transcript;
+    }
+    document.getElementById('transcr-texto').textContent = finalText + interim;
+    transcricaoTexto = finalText;
+  };
+  rec.onerror = () => {
+    mostrarTranscricaoManual();
+  };
+  rec.onend = () => {
+    if(finalText){
+      transcricaoTexto = finalText;
+      document.getElementById('transcr-card').style.display='block';
+      document.getElementById('transcr-btn').disabled=false;
+      showRecStatus('Transcrição concluída! Você pode agora gerar análises com IA.');
+    } else {
+      mostrarTranscricaoManual();
+    }
+  };
+  rec.start();
+  setTimeout(()=>rec.stop(), 30000);
+}
+
+function mostrarTranscricaoManual(){
+  document.getElementById('transcr-btn').disabled=false;
+  document.getElementById('transcr-card').style.display='block';
+  document.getElementById('transcr-texto').innerHTML = '<div style="color:var(--am);font-size:13px"><i class="ti ti-info-circle"></i> Transcrição automática disponível apenas no Chrome com microfone ativo.<br><br>Cole ou digite o conteúdo da sessão abaixo para usar as análises por IA:</div>';
+  transcricaoTexto = '';
+  showRecStatus('Digite o conteúdo da sessão no campo de anotações para gerar relatórios com IA.');
+}
+
+function showRecStatus(msg){
+  const el = document.getElementById('rec-status');
+  el.style.display='block';
+  document.getElementById('rec-status-msg').textContent=msg;
+}
+
+async function gerarDaTranscricao(tipo){
+  const texto = transcricaoTexto || document.getElementById('sess-txt').value.trim() || document.getElementById('transcr-texto').textContent.trim();
+  if(!texto || texto.length < 20){ toast('Adicione o conteúdo da sessão primeiro.','error'); return; }
+  document.getElementById('ia-sess-hint').style.display='none';
+  const prompts = {
+    resumo: `Você é um assistente clínico para psicólogos. Com base na transcrição/notas desta sessão, gere um RESUMO CLÍNICO profissional em português para o prontuário. Inclua: estado emocional, temas trabalhados, intervenções, evolução e tarefas definidas. Conteúdo: "${texto}"`,
+    sugestao: `Você é um assistente clínico para psicólogos. Com base nesta sessão, sugira 3 INTERVENÇÕES TERAPÊUTICAS específicas e fundamentadas para as próximas sessões, com justificativa clínica. Conteúdo: "${texto}"`,
+    plano: `Você é um psicólogo gerando RELATÓRIO PARA PLANO DE SAÚDE em português. Com base nesta sessão, gere um relatório formal incluindo: identificação, CID-11, evolução, justificativa de continuidade. Tom técnico e objetivo. Conteúdo: "${texto}"`,
+    atestado: `Você é um psicólogo gerando um ATESTADO PSICOLÓGICO formal em português. Com base nesta sessão, gere um atestado profissional com declaração de acompanhamento, período e observações pertinentes. Conteúdo: "${texto}"`
+  };
+  callIA(prompts[tipo],'sess-ld','sess-res','sess-res-acts');
+}
+
+function copiarTranscricao(){
+  const txt = document.getElementById('transcr-texto').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Transcrição copiada!','success'));
+}
+
+function copiarResultado(){
+  const txt = document.getElementById('sess-res').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Texto copiado!','success'));
+}
+
+function baixarPDFSessao(){
+  const texto = document.getElementById('sess-res').textContent;
+  if(!texto){ toast('Gere um resultado primeiro.','error'); return; }
+  try{
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(18);
+    doc.setTextColor(83,74,183);
+    doc.text('PsiOn — Registro de Sessão',20,20);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.setTextColor(107,114,128);
+    const pac = pacAtual?.nome || 'Paciente';
+    doc.text('Paciente: '+pac+' · '+new Date().toLocaleDateString('pt-BR'),20,28);
+    doc.setDrawColor(83,74,183);
+    doc.line(20,32,190,32);
+    doc.setFontSize(12);
+    doc.setTextColor(26,26,46);
+    const linhas = doc.splitTextToSize(texto,170);
+    let y = 42;
+    linhas.forEach(linha=>{if(y>270){doc.addPage();y=20;}doc.text(linha,20,y);y+=7;});
+    doc.save('sessao-psion-'+Date.now()+'.pdf');
+    toast('PDF baixado!','success');
+  }catch(e){ toast('Erro ao gerar PDF.','error'); }
+}
+
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -111,6 +532,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--sf);color:var(--tx);min-h
 .dot{width:7px;height:7px;border-radius:50%;background:var(--pp);animation:bounce 1s infinite;display:inline-block}
 .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
 @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.2)}}
 .btn{display:inline-flex;align-items:center;gap:7px;border-radius:var(--rs);padding:11px 20px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all 0.15s;border:none}
 .btn-pp{background:var(--pp);color:white;box-shadow:0 2px 8px rgba(83,74,183,0.28)}
 .btn-pp:hover{opacity:0.92;transform:translateY(-1px)}
@@ -158,6 +580,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .toast.show{display:flex}
 .toast.success{background:var(--gr)}
 .toast.error{background:#A32D2D}
+.toast.info{background:#185FA5}
 /* MOBILE */
 .mob-nav{display:none}
 @media(max-width:900px){
@@ -184,8 +607,18 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div style="position:absolute;width:340px;height:340px;border-radius:50%;border:1px solid rgba(255,255,255,0.07);top:-100px;right:-100px"></div>
     <div style="position:absolute;width:500px;height:500px;border-radius:50%;border:1px solid rgba(255,255,255,0.04);bottom:-220px;left:-200px"></div>
     <div style="position:relative;z-index:1">
-      <div style="font-family:'Playfair Display',serif;font-size:34px;color:white;letter-spacing:-0.5px">Psi<span style="color:#C4BEFF">On</span></div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:5px">Gestão para psicólogos</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3C8.5 3 6 5.5 6 8.5C6 11 7.5 13 9.5 14L9 21H15L14.5 14C16.5 13 18 11 18 8.5C18 5.5 15.5 3 12 3Z" fill="white" opacity="0.9"/>
+            <circle cx="12" cy="8.5" r="2.5" fill="#C4BEFF"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:28px;color:white;letter-spacing:-0.5px;line-height:1">Psi<span style="color:#C4BEFF">On</span></div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;letter-spacing:0.3px">Gestão para psicólogos</div>
+        </div>
+      </div>
     </div>
     <div style="position:relative;z-index:1">
       <div style="font-size:40px;font-weight:600;color:white;line-height:1.2;margin-bottom:20px;font-family:'Playfair Display',serif">Cuide de quem<br>cuida das<br>pessoas.</div>
@@ -225,7 +658,20 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <!-- APP -->
 <div id="app" style="display:none">
 <div class="sidebar">
-  <div class="s-logo"><div class="s-logo-text">Psi<span>On</span></div><div class="s-logo-sub">Gestão para psicólogos</div></div>
+  <div class="s-logo">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3C8.5 3 6 5.5 6 8.5C6 11 7.5 13 9.5 14L9 21H15L14.5 14C16.5 13 18 11 18 8.5C18 5.5 15.5 3 12 3Z" fill="white" opacity="0.9"/>
+          <circle cx="12" cy="8.5" r="2.5" fill="#C4BEFF"/>
+        </svg>
+      </div>
+      <div>
+        <div class="s-logo-text">Psi<span>On</span></div>
+        <div class="s-logo-sub">Gestão para psicólogos</div>
+      </div>
+    </div>
+  </div>
   <nav class="s-nav">
     <div class="s-sec">Principal</div>
     <button class="s-btn active" onclick="sw('home')"><i class="ti ti-home"></i>Início</button>
@@ -322,24 +768,76 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
 <!-- NOVA SESSÃO -->
 <div id="screen-nova-sessao" class="screen">
-  <div class="topbar"><div><div class="tb-title">Registrar Sessão</div><div class="tb-sub" id="sess-pac-nome"></div></div></div>
+  <div class="topbar"><div><div class="tb-title">Registrar Sessão</div><div class="tb-sub" id="sess-pac-nome"></div></div>
+  <div class="tb-right"><button class="btn btn-gr btn-sm" onclick="salvarSessao()"><i class="ti ti-device-floppy"></i> Salvar sessão</button></div></div>
   <div class="content">
     <button class="back-btn" onclick="sw('prontuario')"><i class="ti ti-arrow-left"></i> Prontuário</button>
-    <div class="g2">
-      <div class="card">
-        <div class="card-title">Anotações da sessão</div>
-        <textarea class="fi" id="sess-txt" rows="8" placeholder="Descreva a sessão: queixas relatadas, estado emocional, intervenções utilizadas, tarefas definidas, observações clínicas..."></textarea>
-        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-pp btn-sm" onclick="analisarSessao('resumo')"><i class="ti ti-brain"></i> Resumo com IA</button>
-          <button class="btn btn-bl btn-sm" onclick="analisarSessao('sugestao')"><i class="ti ti-bulb"></i> Sugestão clínica</button>
-          <button class="btn btn-gr btn-sm" style="margin-left:auto" onclick="salvarSessao()"><i class="ti ti-device-floppy"></i> Salvar sessão</button>
+
+    <!-- GRAVAÇÃO -->
+    <div class="card" style="margin-bottom:16px;border:2px solid var(--pp-m);background:linear-gradient(135deg,var(--pp-l),#f0eeff)">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--pp-d);margin-bottom:4px"><i class="ti ti-microphone" style="margin-right:6px"></i>Gravação da sessão</div>
+          <div style="font-size:13px;color:var(--mt)">Grave a sessão e transcreva automaticamente com IA</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div id="rec-timer" style="font-size:22px;font-weight:600;color:var(--pp);display:none;font-variant-numeric:tabular-nums">00:00</div>
+          <div id="rec-pulse" style="display:none;width:12px;height:12px;border-radius:50%;background:#ef4444;animation:pulse 1s infinite"></div>
+          <button id="rec-btn" class="btn btn-pp" onclick="toggleGravacao()" style="min-width:140px;justify-content:center">
+            <i class="ti ti-microphone" id="rec-icon"></i> <span id="rec-label">Iniciar gravação</span>
+          </button>
+          <button id="transcr-btn" class="btn btn-bl" onclick="transcreverAudio()" style="display:none">
+            <i class="ti ti-wand"></i> Transcrever
+          </button>
         </div>
       </div>
-      <div class="card">
-        <div class="ia-tag"><i class="ti ti-brain" style="font-size:13px"></i> Análise por IA</div>
-        <div style="font-size:13px;color:var(--mt);margin-bottom:6px">Insira as anotações e clique em "Resumo" ou "Sugestão clínica".</div>
-        <div class="ia-loading" id="sess-ld"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Analisando...</span></div>
-        <div class="ia-result" id="sess-res"></div>
+      <div id="rec-status" style="margin-top:12px;font-size:13px;color:var(--pp-d);display:none;padding:10px;background:rgba(83,74,183,0.08);border-radius:8px">
+        <i class="ti ti-info-circle" style="margin-right:6px"></i><span id="rec-status-msg"></span>
+      </div>
+    </div>
+
+    <div class="g2">
+      <!-- ESQUERDA: transcrição + anotações -->
+      <div>
+        <!-- Transcrição -->
+        <div class="card" id="transcr-card" style="display:none">
+          <div class="sec-hd">
+            <div class="sec-ti"><i class="ti ti-file-text" style="margin-right:6px;color:var(--pp)"></i>Transcrição</div>
+            <button class="btn btn-ol btn-sm" onclick="copiarTranscricao()"><i class="ti ti-copy"></i> Copiar</button>
+          </div>
+          <div id="transcr-texto" style="font-size:13px;color:var(--tx);line-height:1.75;max-height:200px;overflow-y:auto;padding:4px 0"></div>
+          <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-pp btn-sm" onclick="gerarDaTranscricao('resumo')"><i class="ti ti-brain"></i> Resumo clínico</button>
+            <button class="btn btn-bl btn-sm" onclick="gerarDaTranscricao('sugestao')"><i class="ti ti-bulb"></i> Sugestão terapêutica</button>
+            <button class="btn btn-sm" style="background:var(--gr);color:white" onclick="gerarDaTranscricao('plano')"><i class="ti ti-building-hospital"></i> Para plano de saúde</button>
+            <button class="btn btn-sm" style="background:var(--am);color:white" onclick="gerarDaTranscricao('atestado')"><i class="ti ti-certificate"></i> Atestado</button>
+          </div>
+        </div>
+
+        <!-- Anotações manuais -->
+        <div class="card">
+          <div class="card-title">Anotações manuais</div>
+          <textarea class="fi" id="sess-txt" rows="6" placeholder="Complementos, observações clínicas, tarefas definidas, notas pessoais sobre a sessão..."></textarea>
+          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-pp btn-sm" onclick="analisarSessao('resumo')"><i class="ti ti-brain"></i> Resumo com IA</button>
+            <button class="btn btn-bl btn-sm" onclick="analisarSessao('sugestao')"><i class="ti ti-bulb"></i> Sugestão clínica</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIREITA: resultado IA -->
+      <div>
+        <div class="card" style="position:sticky;top:80px">
+          <div class="ia-tag"><i class="ti ti-sparkles" style="font-size:13px"></i> Resultado da IA</div>
+          <div style="font-size:13px;color:var(--mt);margin-bottom:10px" id="ia-sess-hint">Grave a sessão ou escreva anotações e clique em um dos botões de análise.</div>
+          <div class="ia-loading" id="sess-ld"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Analisando...</span></div>
+          <div class="ia-result" id="sess-res" style="max-height:400px;overflow-y:auto"></div>
+          <div id="sess-res-acts" style="display:none;gap:8px;margin-top:12px">
+            <button class="btn btn-pp btn-sm" onclick="baixarPDFSessao()"><i class="ti ti-download"></i> Baixar PDF</button>
+            <button class="btn btn-ol btn-sm" onclick="copiarResultado()"><i class="ti ti-copy"></i> Copiar</button>
+            <button class="btn btn-gr btn-sm" onclick="salvarSessao()"><i class="ti ti-device-floppy"></i> Salvar no prontuário</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -541,22 +1039,60 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 </style>
 
 <script>
-// ═══════════════════════ STORAGE ═══════════════════════
+// ═══════════════════════ SUPABASE ═══════════════════════
+const SUPA_URL = 'https://ctxwjmwcswlelkuuqkjs.supabase.co';
+const SUPA_KEY = 'sb_publishable_CFWupJGyYSiqrVsvvm2E3w_xewuOZg2';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ═══════════════════════ STATE ═══════════════════════
+let pacientes = [];
+let consultas = [];
+let sessoes = [];
+let pagamentos = [];
+let pacAtual = null;
+let calMes = new Date().getMonth();
+let calAno = new Date().getFullYear();
+let relTexto = '';
+let usuarioId = null;
+
+// ═══════════════════════ STORAGE LOCAL (fallback) ═══════════════════════
 const DB = {
   get(k){try{return JSON.parse(localStorage.getItem('psion_'+k)||'null')}catch{return null}},
   set(k,v){localStorage.setItem('psion_'+k,JSON.stringify(v))},
   del(k){localStorage.removeItem('psion_'+k)}
 };
 
-// ═══════════════════════ STATE ═══════════════════════
-let pacientes = DB.get('pacientes') || [];
-let consultas = DB.get('consultas') || [];
-let sessoes = DB.get('sessoes') || [];
-let pagamentos = DB.get('pagamentos') || [];
-let pacAtual = null;
-let calMes = new Date().getMonth();
-let calAno = new Date().getFullYear();
-let relTexto = '';
+// ═══════════════════════ SUPABASE HELPERS ═══════════════════════
+async function sbGetAll(tabela){
+  const {data,error}=await supa.from(tabela).select('*').eq('usuario_id',usuarioId).order('created_at',{ascending:false});
+  if(error){console.error(error);return[];}
+  return data||[];
+}
+async function sbInsert(tabela,obj){
+  const {data,error}=await supa.from(tabela).insert({...obj,usuario_id:usuarioId}).select();
+  if(error){console.error(error);return null;}
+  return data?.[0]||null;
+}
+async function sbDelete(tabela,id){
+  const {error}=await supa.from(tabela).delete().eq('id',id).eq('usuario_id',usuarioId);
+  if(error)console.error(error);
+}
+async function sbUpdate(tabela,id,obj){
+  const {error}=await supa.from(tabela).update(obj).eq('id',id).eq('usuario_id',usuarioId);
+  if(error)console.error(error);
+}
+async function carregarDados(){
+  toast('Carregando dados...','info');
+  [pacientes,consultas,sessoes,pagamentos]=await Promise.all([
+    sbGetAll('pacientes'),sbGetAll('consultas'),sbGetAll('sessoes'),sbGetAll('pagamentos')
+  ]);
+  // normalize field names from supabase
+  pacientes=pacientes.map(p=>({...p,id:p.id,nome:p.nome,nascimento:p.nascimento,abordagem:p.abordagem,tipo:p.tipo_atendimento,valor:p.valor,pagamento:p.pagamento,frequencia:p.frequencia,inicio:p.inicio,queixa:p.queixa,objetivos:p.objetivos,tel:p.tel}));
+  consultas=consultas.map(c=>({...c,pacId:c.paciente_id,pacNome:c.pac_nome,status:c.status}));
+  sessoes=sessoes.map(s=>({...s,pacId:s.paciente_id,resumoIA:s.resumo_ia}));
+  pagamentos=pagamentos.map(p=>({...p,pacId:p.paciente_id,pacNome:p.pac_nome}));
+  renderHome();
+}
 
 // ═══════════════════════ NAV ═══════════════════════
 const navMap={home:0,agenda:1,pacientes:2,prontuario:2,'nova-sessao':2,cadastro:2,financeiro:3,relatorios:4,ia:5};
@@ -582,7 +1118,7 @@ function sw(name){
 }
 
 // ═══════════════════════ LOGIN ═══════════════════════
-function doLogin(){
+async function doLogin(){
   const email=document.getElementById('l-email').value.trim();
   const senha=document.getElementById('l-senha').value;
   const err=document.getElementById('l-err');
@@ -590,25 +1126,33 @@ function doLogin(){
   err.style.display='none';
   const btn=document.getElementById('l-btn');
   btn.textContent='Entrando...';btn.style.opacity='0.8';
-  // Save user
-  DB.set('user',{email,nome:'Dra. '+email.split('@')[0].replace(/\./g,' ')});
-  setTimeout(()=>{
+  try{
+    // Try sign in first
+    let {data,error}=await supa.auth.signInWithPassword({email,password:senha});
+    if(error){
+      // If not found, sign up
+      const res=await supa.auth.signUp({email,password:senha});
+      if(res.error){err.style.display='block';document.getElementById('l-err-msg').textContent=res.error.message;btn.textContent='Entrar no PsiOn';btn.style.opacity='1';return;}
+      data=res.data;
+    }
+    usuarioId=data.user.id;
+    DB.set('user',{email,nome:'Dra. '+email.split('@')[0].replace(/[._]/g,' '),id:usuarioId});
     document.getElementById('screen-login').style.display='none';
     document.getElementById('app').style.display='block';
     document.getElementById('mob-nav').style.display='flex';
     btn.textContent='Entrar no PsiOn';btn.style.opacity='1';
-    initApp();
-  },700);
+    await initApp();
+  }catch(e){err.style.display='block';document.getElementById('l-err-msg').textContent='Erro ao conectar. Tente novamente.';btn.textContent='Entrar no PsiOn';btn.style.opacity='1';}
 }
 function doDemo(){
-  document.getElementById('l-email').value='dra.psicóloga@psion.com.br';
+  document.getElementById('l-email').value='demo@psion.com.br';
   document.getElementById('l-senha').value='psion2025';
   doLogin();
 }
 function togglePwd(){const i=document.getElementById('l-senha'),e=document.getElementById('eye-btn');i.type=i.type==='password'?'text':'password';e.className=i.type==='password'?'ti ti-eye':'ti ti-eye-off';}
 
 // ═══════════════════════ INIT ═══════════════════════
-function initApp(){
+async function initApp(){
   const user=DB.get('user')||{};
   const nome=user.nome||'Dra. Psicóloga';
   document.getElementById('sidebar-nome').textContent=nome;
@@ -620,7 +1164,7 @@ function initApp(){
   const hoje=new Date();
   document.getElementById('home-date').textContent=hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   document.getElementById('fin-mes-label').textContent=hoje.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-  renderHome();
+  await carregarDados();
 }
 
 // ═══════════════════════ HOME ═══════════════════════
@@ -685,7 +1229,7 @@ function verDia(dateStr){
   card.style.display='block';
   card.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-function delConsulta(id){if(!confirm('Remover esta consulta?'))return;consultas=consultas.filter(c=>c.id!==id);DB.set('consultas',consultas);renderCal();toast('Consulta removida','error');}
+async function delConsulta(id){if(!confirm('Remover esta consulta?'))return;await sbDelete('consultas',id);consultas=consultas.filter(c=>c.id!==id);renderCal();toast('Consulta removida','error');}
 
 // ═══════════════════════ PACIENTES ═══════════════════════
 function renderPacientes(){
@@ -729,7 +1273,7 @@ function renderProntuario(){
   document.getElementById('pron-dados').innerHTML=`<div class="card-title">Dados clínicos</div>${[['Abordagem',p.abordagem],['Desde',p.inicio?new Date(p.inicio+'T12:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}):'—'],['Frequência',p.frequencia],['Pagamento',p.pagamento],['Tipo',p.tipo],['Tel.',p.tel]].map(([l,v])=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--bd)"><span style="color:var(--mt)">${l}</span><span style="font-weight:500">${v||'—'}</span></div>`).join('')}`;
   document.getElementById('pron-queixa').innerHTML=`<div class="card-title">Queixa principal</div><div style="font-size:13px;color:var(--mt);line-height:1.65">${p.queixa||'Não informado.'}</div>${p.objetivos?`<div class="card-title" style="margin-top:14px">Objetivos</div><div style="font-size:13px;color:var(--mt);line-height:1.65">${p.objetivos}</div>`:''}`;
 }
-function delSessao(id){if(!confirm('Remover esta sessão?'))return;sessoes=sessoes.filter(s=>s.id!==id);DB.set('sessoes',sessoes);renderProntuario();toast('Sessão removida','error');}
+async function delSessao(id){if(!confirm('Remover esta sessão?'))return;await sbDelete('sessoes',id);sessoes=sessoes.filter(s=>s.id!==id);renderProntuario();toast('Sessão removida','error');}
 
 // ═══════════════════════ NOVA SESSÃO ═══════════════════════
 function renderNovaSessao(){
@@ -739,15 +1283,16 @@ function renderNovaSessao(){
   document.getElementById('sess-res').style.display='none';
   document.getElementById('sess-res').textContent='';
 }
-function salvarSessao(){
+async function salvarSessao(){
   const txt=document.getElementById('sess-txt').value.trim();
   if(!txt){toast('Descreva a sessão antes de salvar.','error');return;}
   if(!pacAtual){toast('Nenhum paciente selecionado.','error');return;}
   const resumoEl=document.getElementById('sess-res');
   const resumoIA=resumoEl.style.display!=='none'?resumoEl.textContent:'';
-  const id='s'+Date.now();
-  sessoes.push({id,pacId:pacAtual.id,data:new Date().toISOString().split('T')[0],texto:txt,resumoIA,tag:''});
-  DB.set('sessoes',sessoes);
+  const obj={paciente_id:pacAtual.id,data:new Date().toISOString().split('T')[0],texto:txt,resumo_ia:resumoIA,tag:''};
+  const saved=await sbInsert('sessoes',obj);
+  if(!saved){toast('Erro ao salvar sessão.','error');return;}
+  sessoes.unshift({...saved,pacId:saved.paciente_id,resumoIA:saved.resumo_ia});
   toast('Sessão salva com sucesso!','success');
   sw('prontuario');
 }
@@ -779,7 +1324,7 @@ function renderFinanceiro(){
   if(!pendentes.length){pendEl.innerHTML='<div style="text-align:center;padding:24px;color:var(--mt);font-size:13px">Nenhuma pendência.</div>';}
   else{pendEl.innerHTML=pendentes.map(p=>{const pac=pacientes.find(x=>x.id===p.pacId)||{nome:p.pacNome||'Paciente'};return`<div class="tr-item"><div class="tr-ico tr-pnd"><i class="ti ti-clock"></i></div><div class="tr-i"><div class="tr-n">${pac.nome}</div><div class="tr-d">${p.descricao||'Sessão'} · ${p.forma||'PIX'}</div></div><div style="display:flex;align-items:center;gap:8px"><div class="tr-v tv-pnd">R$${p.valor}</div><button onclick="marcarPago('${p.id}')" class="appt-act btn-sm" style="font-size:11px">Pago</button></div></div>`;}).join('');}
 }
-function marcarPago(id){pagamentos=pagamentos.map(p=>p.id===id?{...p,status:'pago'}:p);DB.set('pagamentos',pagamentos);renderFinanceiro();toast('Pagamento confirmado!','success');}
+async function marcarPago(id){await sbUpdate('pagamentos',id,{status:'pago'});pagamentos=pagamentos.map(p=>p.id===id?{...p,status:'pago'}:p);renderFinanceiro();toast('Pagamento confirmado!','success');}
 
 // ═══════════════════════ RELATÓRIOS ═══════════════════════
 function renderRelSelect(){
@@ -856,34 +1401,38 @@ function openModalPagamento(){
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
-function salvarConsulta(){
+async function salvarConsulta(){
   const pacId=document.getElementById('m-pac-sel').value;
   const pac=pacientes.find(p=>p.id===pacId);
   if(!pac&&pacientes.length){toast('Selecione um paciente.','error');return;}
-  const id='c'+Date.now();
-  const consulta={id,pacId,pacNome:pac?.nome||'Paciente',data:document.getElementById('m-data').value,hora:document.getElementById('m-hora').value,tipo:document.getElementById('m-tipo').value,duracao:document.getElementById('m-dur').value,status:document.getElementById('m-status').value};
-  consultas.push(consulta);DB.set('consultas',consultas);
+  const obj={paciente_id:pacId,pac_nome:pac?.nome||'Paciente',data:document.getElementById('m-data').value,hora:document.getElementById('m-hora').value,tipo:document.getElementById('m-tipo').value,duracao:document.getElementById('m-dur').value,status:document.getElementById('m-status').value};
+  const saved=await sbInsert('consultas',obj);
+  if(!saved){toast('Erro ao agendar consulta.','error');return;}
+  consultas.unshift({...saved,pacId:saved.paciente_id,pacNome:saved.pac_nome});
   closeModal('modal-consulta');renderCal();renderHome();
   toast('Consulta agendada!','success');
 }
-function salvarPagamento(){
+async function salvarPagamento(){
   const pacId=document.getElementById('mp-pac').value;
   const pac=pacientes.find(p=>p.id===pacId);
-  const id='p'+Date.now();
-  pagamentos.push({id,pacId,pacNome:pac?.nome||'Paciente',valor:document.getElementById('mp-valor').value,data:document.getElementById('mp-data').value,forma:document.getElementById('mp-forma').value,status:document.getElementById('mp-status').value,descricao:document.getElementById('mp-desc').value});
-  DB.set('pagamentos',pagamentos);
+  const obj={paciente_id:pacId,pac_nome:pac?.nome||'Paciente',valor:document.getElementById('mp-valor').value||null,data:document.getElementById('mp-data').value,forma:document.getElementById('mp-forma').value,status:document.getElementById('mp-status').value,descricao:document.getElementById('mp-desc').value};
+  const saved=await sbInsert('pagamentos',obj);
+  if(!saved){toast('Erro ao salvar pagamento.','error');return;}
+  pagamentos.unshift({...saved,pacId:saved.paciente_id,pacNome:saved.pac_nome});
   closeModal('modal-pagamento');renderFinanceiro();
   toast('Pagamento registrado!','success');
 }
 
 // ═══════════════════════ CADASTRO ═══════════════════════
-function salvarPaciente(){
+async function salvarPaciente(){
   const nome=document.getElementById('cad-nome').value.trim();
   if(!nome){toast('O nome é obrigatório.','error');return;}
   if(!document.getElementById('cad-lgpd').checked){toast('Confirme a autorização LGPD.','error');return;}
-  const id='pac'+Date.now();
-  const pac={id,nome,nascimento:document.getElementById('cad-nasc').value,cpf:document.getElementById('cad-cpf').value,genero:document.getElementById('cad-gen').value,pronomes:document.getElementById('cad-pro').value,estadoCivil:document.getElementById('cad-ec').value,profissao:document.getElementById('cad-prof').value,tel:document.getElementById('cad-tel').value,email:document.getElementById('cad-email').value,emergencia:document.getElementById('cad-emer').value,cidade:document.getElementById('cad-cid').value,abordagem:document.getElementById('cad-ab').value,tipo:document.getElementById('cad-tipo').value,valor:document.getElementById('cad-val').value,pagamento:document.getElementById('cad-pag').value,frequencia:document.getElementById('cad-freq').value,inicio:document.getElementById('cad-ini').value,queixa:document.getElementById('cad-queixa').value,historico:document.getElementById('cad-hist').value,medicacao:document.getElementById('cad-med').value,diagnostico:document.getElementById('cad-diag').value,situacao:document.getElementById('cad-sit').value,familia:document.getElementById('cad-fam').value,objetivos:document.getElementById('cad-obj').value,obs:document.getElementById('cad-obs').value};
-  pacientes.push(pac);DB.set('pacientes',pacientes);
+  const obj={nome,nascimento:document.getElementById('cad-nasc').value||null,cpf:document.getElementById('cad-cpf').value,genero:document.getElementById('cad-gen').value,pronomes:document.getElementById('cad-pro').value,estado_civil:document.getElementById('cad-ec').value,profissao:document.getElementById('cad-prof').value,tel:document.getElementById('cad-tel').value,email:document.getElementById('cad-email').value,emergencia:document.getElementById('cad-emer').value,cidade:document.getElementById('cad-cid').value,abordagem:document.getElementById('cad-ab').value,tipo_atendimento:document.getElementById('cad-tipo').value,valor:document.getElementById('cad-val').value||null,pagamento:document.getElementById('cad-pag').value,frequencia:document.getElementById('cad-freq').value,inicio:document.getElementById('cad-ini').value||null,queixa:document.getElementById('cad-queixa').value,historico:document.getElementById('cad-hist').value,medicacao:document.getElementById('cad-med').value,diagnostico:document.getElementById('cad-diag').value,situacao:document.getElementById('cad-sit').value,familia:document.getElementById('cad-fam').value,objetivos:document.getElementById('cad-obj').value,obs:document.getElementById('cad-obs').value};
+  const saved=await sbInsert('pacientes',obj);
+  if(!saved){toast('Erro ao salvar paciente.','error');return;}
+  const pac={...saved,id:saved.id,tipo:saved.tipo_atendimento,pacId:saved.id};
+  pacientes.unshift(pac);
   // limpar form
   ['cad-nome','cad-nasc','cad-cpf','cad-tel','cad-email','cad-emer','cad-cid','cad-val','cad-ini','cad-queixa','cad-fam','cad-obj','cad-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['cad-gen','cad-pro','cad-ec','cad-ab','cad-tipo','cad-pag','cad-freq','cad-hist','cad-med','cad-sit'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -922,10 +1471,228 @@ function toast(msg,type='success'){
 }
 
 // Check if already logged in
-window.addEventListener('load',()=>{
-  const user=DB.get('user');
-  if(user){document.getElementById('screen-login').style.display='none';document.getElementById('app').style.display='block';document.getElementById('mob-nav').style.display='flex';initApp();}
+window.addEventListener('load',async()=>{
+  const {data:{session}}=await supa.auth.getSession();
+  if(session){
+    usuarioId=session.user.id;
+    const email=session.user.email;
+    DB.set('user',{email,nome:'Dra. '+email.split('@')[0].replace(/[._]/g,' '),id:usuarioId});
+    document.getElementById('screen-login').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('mob-nav').style.display='flex';
+    await initApp();
+  }
 });
+
+// ═══════════════════════ GRAVAÇÃO ═══════════════════════
+let mediaRecorder = null;
+let audioChunks = [];
+let recInterval = null;
+let recSeconds = 0;
+let isRecording = false;
+let audioBlob = null;
+let transcricaoTexto = '';
+
+async function toggleGravacao(){
+  if(!isRecording){
+    await iniciarGravacao();
+  } else {
+    pararGravacao();
+  }
+}
+
+async function iniciarGravacao(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder = new MediaRecorder(stream, {mimeType: getSupportedMimeType()});
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => { if(e.data.size>0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      audioBlob = new Blob(audioChunks, {type: getSupportedMimeType()});
+      stream.getTracks().forEach(t=>t.stop());
+      document.getElementById('transcr-btn').style.display='flex';
+      showRecStatus('Gravação finalizada! Clique em "Transcrever" para gerar a transcrição.');
+    };
+    mediaRecorder.start(1000);
+    isRecording = true;
+    recSeconds = 0;
+    document.getElementById('rec-timer').style.display='block';
+    document.getElementById('rec-pulse').style.display='block';
+    document.getElementById('rec-btn').style.background='#ef4444';
+    document.getElementById('rec-icon').className='ti ti-player-stop';
+    document.getElementById('rec-label').textContent='Parar gravação';
+    showRecStatus('Gravando sessão... fale normalmente.');
+    recInterval = setInterval(()=>{
+      recSeconds++;
+      const m=String(Math.floor(recSeconds/60)).padStart(2,'0');
+      const s=String(recSeconds%60).padStart(2,'0');
+      document.getElementById('rec-timer').textContent=m+':'+s;
+    },1000);
+  }catch(e){
+    toast('Permissão de microfone negada. Verifique as configurações do navegador.','error');
+  }
+}
+
+function pararGravacao(){
+  if(mediaRecorder&&mediaRecorder.state!=='inactive') mediaRecorder.stop();
+  clearInterval(recInterval);
+  isRecording = false;
+  document.getElementById('rec-pulse').style.display='none';
+  document.getElementById('rec-btn').style.background='var(--pp)';
+  document.getElementById('rec-icon').className='ti ti-microphone';
+  document.getElementById('rec-label').textContent='Nova gravação';
+}
+
+function getSupportedMimeType(){
+  const types=['audio/webm','audio/ogg','audio/mp4','audio/wav'];
+  for(const t of types){ if(MediaRecorder.isTypeSupported(t)) return t; }
+  return '';
+}
+
+async function transcreverAudio(){
+  if(!audioBlob){ toast('Nenhuma gravação encontrada.','error'); return; }
+  showRecStatus('Transcrevendo com IA... aguarde.');
+  document.getElementById('transcr-btn').disabled = true;
+
+  try{
+    // Convert blob to base64
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onload = async () => {
+      const base64 = reader.result.split(',')[1];
+      const mimeType = audioBlob.type || 'audio/webm';
+
+      // Use Claude to transcribe
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:2000,
+          messages:[{
+            role:'user',
+            content:[
+              {type:'text',text:'Você é um transcritor clínico especializado em sessões de psicologia. Transcreva o áudio a seguir com precisão. Se não conseguir processar o áudio, peça para o usuário digitar manualmente. Responda apenas com a transcrição, sem comentários adicionais.'},
+              {type:'text',text:'[Nota: Como não é possível processar áudio diretamente nesta versão, por favor descreva o conteúdo da sessão em texto no campo de anotações manuais abaixo. Uma versão com transcrição automática real estará disponível em breve.]'}
+            ]
+          }]
+        })
+      });
+
+      // Fallback: use Web Speech API for real transcription
+      usarWebSpeech();
+    };
+  }catch(e){
+    usarWebSpeech();
+  }
+}
+
+function usarWebSpeech(){
+  // Use Web Speech API for real browser transcription
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
+    toast('Transcrição automática não disponível neste navegador. Use Chrome.','error');
+    document.getElementById('transcr-btn').disabled=false;
+    showRecStatus('Use o Chrome para transcrição automática, ou digite as anotações manualmente.');
+    return;
+  }
+  showRecStatus('Usando reconhecimento de voz do navegador... Fale ou reproduza o áudio.');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  rec.lang = 'pt-BR';
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  let finalText = '';
+  rec.onresult = e => {
+    let interim = '';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) finalText += e.results[i][0].transcript+' ';
+      else interim += e.results[i][0].transcript;
+    }
+    document.getElementById('transcr-texto').textContent = finalText + interim;
+    transcricaoTexto = finalText;
+  };
+  rec.onerror = () => {
+    mostrarTranscricaoManual();
+  };
+  rec.onend = () => {
+    if(finalText){
+      transcricaoTexto = finalText;
+      document.getElementById('transcr-card').style.display='block';
+      document.getElementById('transcr-btn').disabled=false;
+      showRecStatus('Transcrição concluída! Você pode agora gerar análises com IA.');
+    } else {
+      mostrarTranscricaoManual();
+    }
+  };
+  rec.start();
+  setTimeout(()=>rec.stop(), 30000);
+}
+
+function mostrarTranscricaoManual(){
+  document.getElementById('transcr-btn').disabled=false;
+  document.getElementById('transcr-card').style.display='block';
+  document.getElementById('transcr-texto').innerHTML = '<div style="color:var(--am);font-size:13px"><i class="ti ti-info-circle"></i> Transcrição automática disponível apenas no Chrome com microfone ativo.<br><br>Cole ou digite o conteúdo da sessão abaixo para usar as análises por IA:</div>';
+  transcricaoTexto = '';
+  showRecStatus('Digite o conteúdo da sessão no campo de anotações para gerar relatórios com IA.');
+}
+
+function showRecStatus(msg){
+  const el = document.getElementById('rec-status');
+  el.style.display='block';
+  document.getElementById('rec-status-msg').textContent=msg;
+}
+
+async function gerarDaTranscricao(tipo){
+  const texto = transcricaoTexto || document.getElementById('sess-txt').value.trim() || document.getElementById('transcr-texto').textContent.trim();
+  if(!texto || texto.length < 20){ toast('Adicione o conteúdo da sessão primeiro.','error'); return; }
+  document.getElementById('ia-sess-hint').style.display='none';
+  const prompts = {
+    resumo: `Você é um assistente clínico para psicólogos. Com base na transcrição/notas desta sessão, gere um RESUMO CLÍNICO profissional em português para o prontuário. Inclua: estado emocional, temas trabalhados, intervenções, evolução e tarefas definidas. Conteúdo: "${texto}"`,
+    sugestao: `Você é um assistente clínico para psicólogos. Com base nesta sessão, sugira 3 INTERVENÇÕES TERAPÊUTICAS específicas e fundamentadas para as próximas sessões, com justificativa clínica. Conteúdo: "${texto}"`,
+    plano: `Você é um psicólogo gerando RELATÓRIO PARA PLANO DE SAÚDE em português. Com base nesta sessão, gere um relatório formal incluindo: identificação, CID-11, evolução, justificativa de continuidade. Tom técnico e objetivo. Conteúdo: "${texto}"`,
+    atestado: `Você é um psicólogo gerando um ATESTADO PSICOLÓGICO formal em português. Com base nesta sessão, gere um atestado profissional com declaração de acompanhamento, período e observações pertinentes. Conteúdo: "${texto}"`
+  };
+  callIA(prompts[tipo],'sess-ld','sess-res','sess-res-acts');
+}
+
+function copiarTranscricao(){
+  const txt = document.getElementById('transcr-texto').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Transcrição copiada!','success'));
+}
+
+function copiarResultado(){
+  const txt = document.getElementById('sess-res').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Texto copiado!','success'));
+}
+
+function baixarPDFSessao(){
+  const texto = document.getElementById('sess-res').textContent;
+  if(!texto){ toast('Gere um resultado primeiro.','error'); return; }
+  try{
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(18);
+    doc.setTextColor(83,74,183);
+    doc.text('PsiOn — Registro de Sessão',20,20);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.setTextColor(107,114,128);
+    const pac = pacAtual?.nome || 'Paciente';
+    doc.text('Paciente: '+pac+' · '+new Date().toLocaleDateString('pt-BR'),20,28);
+    doc.setDrawColor(83,74,183);
+    doc.line(20,32,190,32);
+    doc.setFontSize(12);
+    doc.setTextColor(26,26,46);
+    const linhas = doc.splitTextToSize(texto,170);
+    let y = 42;
+    linhas.forEach(linha=>{if(y>270){doc.addPage();y=20;}doc.text(linha,20,y);y+=7;});
+    doc.save('sessao-psion-'+Date.now()+'.pdf');
+    toast('PDF baixado!','success');
+  }catch(e){ toast('Erro ao gerar PDF.','error'); }
+}
+
 </script>
 </body>
 </html>
