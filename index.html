@@ -2,788 +2,556 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<style>
-@media screen and (max-width: 900px) {
-  #screen-login {
-    display: block !important;
-    height: auto !important;
-    min-height: 100vh !important;
-    overflow-y: auto !important;
-    background: white !important;
-  }
-  #screen-login > div:first-child {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    overflow: hidden !important;
-    visibility: hidden !important;
-  }
-  #screen-login > div:last-child {
-    display: flex !important;
-    width: 100% !important;
-    min-height: 100vh !important;
-    padding: 48px 24px !important;
-    align-items: flex-start !important;
-    justify-content: center !important;
-    padding-top: 60px !important;
-  }
-  #screen-login > div:last-child > div {
-    width: 100% !important;
-    max-width: 400px !important;
-  }
-}
-</style>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PsiOn — Gestão para Psicólogos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PsiOn</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
-<script>
-// Safe loader - won't crash if CDN fails
-window.onerror = function(){return true;};
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onerror="console.log('jspdf not loaded')"></script>
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#534AB7">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="PsiOn">
-<style id="mobile-login-fix">
-@media(max-width:900px){
-  #screen-login{
-    flex-direction:column !important;
-    height:auto !important;
-    min-height:100vh !important;
-    overflow-y:auto !important;
-  }
-  #screen-login > div:first-child{
-    display:none !important;
-  }
-  #screen-login > div:last-child{
-    width:100% !important;
-    min-height:100vh !important;
-    padding:50px 24px 40px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-  }
-  #screen-login > div:last-child > div{
-    width:100% !important;
-    max-width:100% !important;
-  }
-  .login-input, input[type="email"], input[type="password"]{
-    font-size:16px !important;
-  }
-}
-</style>
-
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --pp:#534AB7;--pp-l:#EEEDFE;--pp-m:#AFA9EC;--pp-d:#3C3489;
-  --pb:#185FA5;--pb-l:#E6F1FB;
-  --green:#3B6D11;--green-l:#EAF3DE;
-  --amber:#854F0B;--amber-l:#FAEEDA;
-  --red:#A32D2D;--red-l:#FCEBEB;
-  --tx:#1a1a2e;--mt:#6b7280;--bg:#ffffff;--sf:#f7f6ff;--bd:#e5e7eb;
-  --r:12px;--rs:8px;
-  --sh:0 1px 3px rgba(83,74,183,0.07),0 4px 16px rgba(83,74,183,0.05);
-}
-body{font-family:'DM Sans',sans-serif;background:var(--sf);color:var(--tx);min-height:100vh}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:#f7f6ff;color:#1a1a2e;min-height:100vh;overflow-x:hidden}
 
-/* ── LAYOUT ── */
-.sidebar{position:fixed;left:0;top:0;bottom:0;width:240px;background:linear-gradient(180deg,#2D2580 0%,#534AB7 55%,#6B5FCC 100%);display:flex;flex-direction:column;z-index:100;box-shadow:4px 0 24px rgba(83,74,183,0.2)}
-.main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column}
-.topbar{background:white;border-bottom:1px solid var(--bd);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 0 var(--bd)}
-.content{padding:28px 32px;flex:1;background:var(--sf)}
+/* LOGIN */
+#login{position:fixed;inset:0;background:white;z-index:9999;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.login-box{width:100%;max-width:380px}
+.logo-area{text-align:center;margin-bottom:36px}
+.logo-icon{width:80px;height:80px;border-radius:22px;background:linear-gradient(135deg,#2D2580,#534AB7);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:0 8px 28px rgba(83,74,183,0.4)}
+.logo-name{font-size:30px;font-weight:700;color:#1a1a2e}
+.logo-name b{color:#534AB7;font-weight:700}
+.logo-sub{font-size:13px;color:#9ca3af;margin-top:4px}
+.login-title{font-size:22px;font-weight:600;text-align:center;margin-bottom:6px}
+.login-sub{font-size:14px;color:#6b7280;text-align:center;margin-bottom:28px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.field input{width:100%;padding:16px;border:2px solid #e5e7eb;border-radius:14px;font-size:16px;font-family:'DM Sans',sans-serif;background:#f8f7ff;color:#1a1a2e;-webkit-appearance:none;appearance:none;transition:border-color 0.15s}
+.field input:focus{outline:none;border-color:#534AB7;background:white}
+.btn-login{width:100%;padding:17px;background:linear-gradient(135deg,#534AB7,#6B5FCC);color:white;border:none;border-radius:14px;font-size:16px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;margin-top:8px;-webkit-appearance:none;box-shadow:0 4px 20px rgba(83,74,183,0.4)}
+.btn-demo{width:100%;padding:15px;background:white;color:#534AB7;border:2px solid #e5e7eb;border-radius:14px;font-size:15px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-top:12px;-webkit-appearance:none}
+.divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:#9ca3af;font-size:13px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#e5e7eb}
+.err{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px;font-size:13px;color:#dc2626;margin-bottom:14px;display:none}
+.lgpd{margin-top:20px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6}
+
+/* APP */
+#app{display:none;padding-bottom:70px}
+.topbar{background:linear-gradient(135deg,#2D2580,#534AB7);padding:20px 20px 16px;color:white;position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:22px;font-weight:700;color:white}
+.topbar-logo b{color:#C4BEFF}
+.topbar-sub{font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px}
+.content{padding:16px}
+.card{background:white;border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 2px 12px rgba(83,74,183,0.08)}
+.card-title{font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:14px}
+.sec-title{font-size:16px;font-weight:600;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.stat{background:white;border-radius:14px;padding:16px;box-shadow:0 2px 12px rgba(83,74,183,0.08)}
+.stat-val{font-size:24px;font-weight:700;color:#534AB7}
+.stat-lbl{font-size:11px;color:#6b7280;margin-top:4px}
+.badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500}
+.b-ok{background:#EAF3DE;color:#3B6D11}
+.b-wt{background:#FAEEDA;color:#854F0B}
+.b-pp{background:#EEEDFE;color:#534AB7}
+.appt{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0}
+.appt:last-child{border-bottom:none}
+.appt-t{background:#EEEDFE;color:#534AB7;font-size:13px;font-weight:600;padding:6px 10px;border-radius:10px;min-width:56px;text-align:center}
+.appt-n{font-size:14px;font-weight:500}
+.appt-s{font-size:12px;color:#6b7280}
+.btn{padding:12px 18px;border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;-webkit-appearance:none}
+.btn-pp{background:#534AB7;color:white}
+.btn-ol{background:white;color:#534AB7;border:1.5px solid #534AB7}
+.btn-full{width:100%;justify-content:center}
+.fi{width:100%;border:1.5px solid #e5e7eb;border-radius:12px;padding:13px;font-size:15px;font-family:'DM Sans',sans-serif;background:#f8f7ff;color:#1a1a2e;-webkit-appearance:none;appearance:none;margin-bottom:12px}
+.fi:focus{outline:none;border-color:#534AB7;background:white}
+textarea.fi{resize:vertical;min-height:120px}
+select.fi{appearance:none;-webkit-appearance:none}
+.fl{font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block}
+.ia-box{background:#EEEDFE;border-radius:14px;padding:16px;font-size:14px;color:#3C3489;line-height:1.7;margin-top:12px;white-space:pre-wrap;display:none}
+.loading{display:none;padding:12px 0;color:#534AB7;font-size:13px}
+.dot{width:6px;height:6px;border-radius:50%;background:#534AB7;animation:b 1s infinite;display:inline-block;margin-right:3px}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.pat-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.pat-item:last-child{border-bottom:none}
+.av{width:40px;height:40px;border-radius:50%;background:#EEEDFE;color:#534AB7;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.toast-msg{position:fixed;bottom:80px;left:16px;right:16px;background:#1a1a2e;color:white;padding:14px 18px;border-radius:14px;font-size:14px;z-index:9998;text-align:center;display:none;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.toast-msg.ok{background:#3B6D11}
+.toast-msg.err{background:#A32D2D}
+
+/* BOTTOM NAV */
+.bot-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e5e7eb;display:none;z-index:200;padding:6px 0 2px;box-shadow:0 -4px 16px rgba(0,0,0,0.06)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:10px;font-family:'DM Sans',sans-serif;padding:6px 0;-webkit-appearance:none}
+.nav-btn svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-btn.active{color:#534AB7}
+
+/* SCREENS */
 .screen{display:none}.screen.active{display:block}
 
-/* ── SIDEBAR ── */
-.s-logo{padding:28px 24px 22px;border-bottom:1px solid rgba(255,255,255,0.1)}
-.s-logo-text{font-family:'Playfair Display',serif;font-size:28px;color:white;letter-spacing:-0.5px}
-.s-logo-text span{color:#C4BEFF}
-.s-logo-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;letter-spacing:0.3px}
-.s-nav{flex:1;padding:20px 14px;display:flex;flex-direction:column;gap:3px}
-.s-btn{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:none;background:transparent;color:rgba(255,255,255,0.6);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;transition:all 0.15s;width:100%;position:relative}
-.s-btn i{font-size:20px;flex-shrink:0}
-.s-btn:hover{background:rgba(255,255,255,0.1);color:white}
-.s-btn.active{background:rgba(255,255,255,0.18);color:white;font-weight:500}
-.s-btn.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:#C4BEFF;border-radius:0 3px 3px 0}
-.s-section{font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;padding:16px 16px 6px;font-weight:500}
-.s-footer{padding:20px 24px;border-top:1px solid rgba(255,255,255,0.1)}
-.s-user{display:flex;align-items:center;gap:11px}
-.s-avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.18);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;border:2px solid rgba(255,255,255,0.25);flex-shrink:0}
-.s-name{font-size:14px;color:white;font-weight:500}
-.s-role{font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px}
-
-/* ── TOPBAR ── */
-.tb-title{font-size:20px;font-weight:600;color:var(--tx)}
-.tb-sub{font-size:13px;color:var(--mt);margin-top:2px}
-.tb-right{display:flex;align-items:center;gap:10px}
-.tb-btn{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mt);font-size:19px;transition:all 0.15s}
-.tb-btn:hover{border-color:var(--pp);color:var(--pp)}
-
-/* ── CARDS ── */
-.card{background:white;border:1px solid var(--bd);border-radius:var(--r);padding:22px 24px;margin-bottom:16px;box-shadow:var(--sh)}
-.card-title{font-size:11px;color:var(--mt);margin-bottom:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.7px}
-
-/* ── STATS ── */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-.stat-card{background:white;border:1px solid var(--bd);border-radius:var(--r);padding:20px 22px;box-shadow:var(--sh);transition:transform 0.15s,box-shadow 0.15s;cursor:default}
-.stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(83,74,183,0.12)}
-.stat-ico{width:44px;height:44px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
-.stat-lbl{font-size:11px;color:var(--mt);margin-bottom:5px;font-weight:500;text-transform:uppercase;letter-spacing:0.4px}
-.stat-val{font-size:26px;font-weight:600;color:var(--tx)}
-.stat-sub{font-size:12px;color:var(--mt);margin-top:4px}
-
-/* ── GRID LAYOUTS ── */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.g3{display:grid;grid-template-columns:2fr 1fr;gap:16px}
-.g3x{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-
-/* ── APPOINTMENT ── */
-.appt{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--bd)}
-.appt:last-child{border-bottom:none}
-.appt-t{background:var(--pp-l);color:var(--pp);font-size:13px;font-weight:600;padding:7px 12px;border-radius:var(--rs);min-width:60px;text-align:center}
-.appt-i{flex:1}
-.appt-n{font-size:14px;font-weight:500;color:var(--tx)}
-.appt-s{font-size:12px;color:var(--mt)}
-.badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500;white-space:nowrap}
-.b-ok{background:var(--green-l);color:var(--green)}
-.b-wt{background:var(--amber-l);color:var(--amber)}
-.b-new{background:var(--pb-l);color:var(--pb)}
-.b-pp{background:var(--pp-l);color:var(--pp)}
-.appt-act{background:var(--pp-l);color:var(--pp);border:none;border-radius:var(--rs);padding:7px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.15s}
-.appt-act:hover{background:var(--pp);color:white}
-
-/* ── PATIENTS TABLE ── */
-.ptable{width:100%;border-collapse:collapse}
-.ptable th{font-size:11px;color:var(--mt);font-weight:500;text-align:left;padding:10px 14px;border-bottom:1px solid var(--bd);text-transform:uppercase;letter-spacing:0.5px}
-.ptable td{padding:13px 14px;border-bottom:1px solid var(--bd);font-size:14px;color:var(--tx)}
-.ptable tr:last-child td{border-bottom:none}
-.ptable tbody tr{cursor:pointer;transition:background 0.1s}
-.ptable tbody tr:hover td{background:#faf9ff}
-.av{width:38px;height:38px;border-radius:50%;background:var(--pp-l);color:var(--pp);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
-.av-row{display:flex;align-items:center;gap:10px}
-
-/* ── FINANCE ── */
-.fin-banner{background:linear-gradient(135deg,#2D2580 0%,#534AB7 60%,#7B6FD4 100%);border-radius:var(--r);padding:26px 30px;margin-bottom:16px;color:white;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:20px;align-items:center;box-shadow:0 4px 20px rgba(83,74,183,0.25)}
-.fin-ml{font-size:12px;color:rgba(255,255,255,0.65);margin-bottom:5px}
-.fin-mv{font-size:30px;font-weight:600}
-.fin-sl{font-size:11px;color:rgba(255,255,255,0.55)}
-.fin-sv{font-size:18px;font-weight:600;margin-top:4px}
-.tr{display:flex;align-items:center;gap:13px;padding:12px 0;border-bottom:1px solid var(--bd)}
-.tr:last-child{border-bottom:none}
-.tr-ico{width:38px;height:38px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.tr-inc{background:var(--green-l);color:var(--green)}
-.tr-pnd{background:var(--amber-l);color:var(--amber)}
-.tr-i{flex:1}
-.tr-n{font-size:14px;font-weight:500;color:var(--tx)}
-.tr-d{font-size:12px;color:var(--mt)}
-.tr-v{font-size:14px;font-weight:600}
-.tv-inc{color:var(--green)}
-.tv-pnd{color:var(--amber)}
-
-/* ── PRONTUÁRIO ── */
-.ph{display:flex;align-items:center;gap:16px;padding:20px 24px;background:white;border:1px solid var(--bd);border-radius:var(--r);margin-bottom:16px;box-shadow:var(--sh)}
-.ph-av{width:58px;height:58px;border-radius:50%;background:var(--pp-l);color:var(--pp);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:600;flex-shrink:0}
-.ph-nm{font-size:18px;font-weight:600;color:var(--tx)}
-.ph-mt{font-size:13px;color:var(--mt);margin-top:3px}
-.ph-bg{background:var(--pp-l);color:var(--pp);font-size:12px;padding:3px 11px;border-radius:20px;display:inline-block;margin-top:7px;font-weight:500}
-.sess{padding:14px 0;border-bottom:1px solid var(--bd);cursor:pointer}
-.sess:last-child{border-bottom:none}
-.sess:hover .sess-prev{color:var(--pp)}
-.sess-dt{font-size:12px;color:var(--pp);font-weight:600;margin-bottom:4px}
-.sess-prev{font-size:13px;color:var(--mt);line-height:1.55;transition:color 0.15s}
-.sess-tag{display:inline-block;background:var(--pp-l);color:var(--pp);font-size:11px;padding:2px 9px;border-radius:20px;margin-top:5px}
-
-/* ── RELATÓRIOS ── */
-.rel-card{background:white;border:1px solid var(--bd);border-radius:var(--r);padding:20px;cursor:pointer;transition:all 0.18s;box-shadow:var(--sh)}
-.rel-card:hover{border-color:var(--pp);transform:translateY(-3px);box-shadow:0 8px 24px rgba(83,74,183,0.14)}
-.rel-ico{width:46px;height:46px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:13px}
-.ri-pp{background:var(--pp-l);color:var(--pp)}
-.ri-bl{background:var(--pb-l);color:var(--pb)}
-.ri-gr{background:var(--green-l);color:var(--green)}
-.ri-am{background:var(--amber-l);color:var(--amber)}
-.rel-nm{font-size:14px;font-weight:600;color:var(--tx);margin-bottom:4px}
-.rel-ds{font-size:12px;color:var(--mt)}
-
-/* ── IA ── */
-.ia-tag{display:inline-flex;align-items:center;gap:5px;background:var(--pp);color:white;font-size:12px;padding:4px 13px;border-radius:20px;margin-bottom:12px;font-weight:500}
-.ia-result{background:var(--pp-l);border-radius:var(--r);padding:18px;font-size:14px;color:var(--pp-d);line-height:1.75;margin-top:14px;white-space:pre-wrap;display:none}
-.ia-loading{display:none;align-items:center;gap:8px;color:var(--pp);font-size:13px;padding:10px 0}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--pp);animation:bounce 1s infinite;display:inline-block}
-.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
-@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
-
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:7px;border-radius:var(--rs);padding:11px 20px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all 0.15s;border:none}
-.btn-pp{background:var(--pp);color:white;box-shadow:0 2px 8px rgba(83,74,183,0.28)}
-.btn-pp:hover{opacity:0.92;transform:translateY(-1px);box-shadow:0 4px 14px rgba(83,74,183,0.35)}
-.btn-bl{background:var(--pb);color:white;box-shadow:0 2px 8px rgba(24,95,165,0.25)}
-.btn-bl:hover{opacity:0.92;transform:translateY(-1px)}
-.btn-ol{background:transparent;color:var(--pp);border:1.5px solid var(--pp)}
-.btn-ol:hover{background:var(--pp-l)}
-.btn-sm{padding:8px 14px;font-size:13px}
-
-/* ── FORMS ── */
-.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
-.fg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.fl{font-size:11px;color:var(--mt);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
-.fi{border:1.5px solid var(--bd);border-radius:var(--rs);padding:11px 13px;font-size:14px;font-family:'DM Sans',sans-serif;background:var(--sf);color:var(--tx);width:100%;transition:border-color 0.15s}
-.fi:focus{outline:none;border-color:var(--pp);background:white}
-textarea.fi{resize:vertical}
-select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
-
-/* ── MISC ── */
-.sec-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.sec-ti{font-size:16px;font-weight:600;color:var(--tx);letter-spacing:-0.2px}
-.sec-lk{font-size:13px;color:var(--pp);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif}
-.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--mt);font-size:14px;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;margin-bottom:16px;padding:0}
-.back-btn:hover{color:var(--pp)}
-.search-bar{display:flex;align-items:center;gap:10px;background:white;border:1.5px solid var(--bd);border-radius:var(--rs);padding:10px 14px;margin-bottom:16px;transition:border-color 0.15s}
-.search-bar:focus-within{border-color:var(--pp)}
-.search-bar input{border:none;background:transparent;font-size:14px;flex:1;color:var(--tx);font-family:'DM Sans',sans-serif;outline:none}
-.divider{height:1px;background:var(--bd);margin:16px 0}
-.empty-state{text-align:center;padding:40px 20px;color:var(--mt)}
-.empty-state i{font-size:40px;color:var(--pp-m);margin-bottom:12px;display:block}
-
-/* ── MOBILE ── */
-.mob-nav{display:none}
-@media(max-width:900px){
-  .sidebar{display:none}
-  .main{margin-left:0}
-  .content{padding:16px}
-  .topbar{padding:14px 16px}
-  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px}
-  .g2,.g3,.g3x{grid-template-columns:1fr}
-  .fin-banner{grid-template-columns:1fr 1fr;gap:12px;padding:20px}
-  .ptable thead{display:none}
-  .ptable td{display:block;padding:5px 12px}
-  .ptable tr{display:block;padding:10px 0;border-bottom:1px solid var(--bd)}
-  .ptable tr:last-child{border-bottom:none}
-  .mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--bd);padding:8px 0 6px;z-index:200;box-shadow:0 -4px 16px rgba(0,0,0,0.07)}
-  .main{padding-bottom:72px}
-  .m-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--mt);font-size:10px;font-family:'DM Sans',sans-serif;padding:5px 0;transition:color 0.15s}
-  .m-btn i{font-size:23px}
-  .m-btn.active{color:var(--pp)}
-  @media(max-width:480px){.fg-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,1fr)}}
-}
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal-box{background:white;border-radius:24px 24px 0 0;padding:28px 20px 40px;width:100%;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:18px;font-weight:600;margin-bottom:20px}
 </style>
-<script>
-// Failsafe: ensure login screen is always visible on load
-document.addEventListener('DOMContentLoaded', function(){
-  var login = document.getElementById('screen-login');
-  var app = document.getElementById('app');
-  if(login) login.style.display = 'block';
-  if(app) app.style.display = 'none';
-});
-</script>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════
-     LOGIN
-═══════════════════════════════════════ -->
-<div id="screen-login" style="position:fixed;top:0;left:0;right:0;bottom:0;background:white;overflow-y:auto;z-index:9999;-webkit-overflow-scrolling:touch">
-  <div style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:40px 24px;box-sizing:border-box">
-    <div style="width:100%;max-width:400px">
-      <div style="text-align:center;margin-bottom:32px">
-        <div style="width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,#2D2580,#534AB7);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
-          <svg width="38" height="38" viewBox="0 0 100 100" fill="none">
-            <rect x="44" y="10" width="12" height="80" rx="4" fill="white"/>
-            <rect x="20" y="55" width="60" height="12" rx="4" fill="white"/>
-            <path d="M32 55 Q20 55 20 38 Q20 20 44 20" stroke="white" stroke-width="12" fill="none" stroke-linecap="round"/>
-            <path d="M68 55 Q80 55 80 38 Q80 20 56 20" stroke="white" stroke-width="12" fill="none" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div style="font-family:Georgia,serif;font-size:28px;color:#1a1a2e;letter-spacing:-0.5px">Psi<span style="color:#534AB7">On</span></div>
-        <div style="font-size:13px;color:#6b7280;margin-top:4px">Gestão para psicólogos</div>
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <div class="logo-area">
+      <div class="logo-icon">
+        <svg width="40" height="40" viewBox="0 0 100 100" fill="none">
+          <rect x="44" y="8" width="12" height="84" rx="5" fill="white"/>
+          <rect x="18" y="54" width="64" height="13" rx="5" fill="white"/>
+          <path d="M30 54 Q18 54 18 36 Q18 18 44 18" stroke="white" stroke-width="13" fill="none" stroke-linecap="round"/>
+          <path d="M70 54 Q82 54 82 36 Q82 18 56 18" stroke="white" stroke-width="13" fill="none" stroke-linecap="round"/>
+        </svg>
       </div>
-      <div style="font-size:22px;font-weight:600;color:#1a1a2e;margin-bottom:6px;text-align:center">Bem-vinda de volta</div>
-      <div style="font-size:14px;color:#6b7280;text-align:center;margin-bottom:28px">Entre na sua conta para continuar</div>
-      <div id="l-err" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 14px;font-size:13px;color:#dc2626;margin-bottom:16px"><span id="l-err-msg"></span></div>
-      <div style="margin-bottom:16px">
-        <div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">E-mail</div>
-        <input id="l-email" type="email" placeholder="seu@email.com" autocomplete="email" style="width:100%;border:1.5px solid #e5e7eb;border-radius:12px;padding:15px 16px;font-size:16px;font-family:sans-serif;color:#1a1a2e;background:#f8f7ff;box-sizing:border-box;-webkit-appearance:none" onfocus="this.style.borderColor='#534AB7';this.style.background='white'" onblur="this.style.borderColor='#e5e7eb';this.style.background='#f8f7ff'">
-      </div>
-      <div style="margin-bottom:24px">
-        <div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Senha</div>
-        <input id="l-senha" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;border:1.5px solid #e5e7eb;border-radius:12px;padding:15px 16px;font-size:16px;font-family:sans-serif;color:#1a1a2e;background:#f8f7ff;box-sizing:border-box;-webkit-appearance:none" onfocus="this.style.borderColor='#534AB7';this.style.background='white'" onblur="this.style.borderColor='#e5e7eb';this.style.background='#f8f7ff'" onkeydown="if(event.key==='Enter')doLogin()">
-      </div>
-      <button id="l-btn" onclick="doLogin()" style="width:100%;background:linear-gradient(135deg,#534AB7,#6B5FCC);color:white;border:none;border-radius:12px;padding:17px;font-size:16px;font-family:sans-serif;font-weight:600;cursor:pointer;margin-bottom:16px;-webkit-appearance:none;box-shadow:0 4px 16px rgba(83,74,183,0.35)">Entrar no PsiOn</button>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div style="flex:1;height:1px;background:#e5e7eb"></div><span style="font-size:13px;color:#9ca3af">ou</span><div style="flex:1;height:1px;background:#e5e7eb"></div></div>
-      <button onclick="doDemo()" style="width:100%;background:white;color:#534AB7;border:1.5px solid #e5e7eb;border-radius:12px;padding:15px;font-size:15px;font-family:sans-serif;font-weight:500;cursor:pointer;margin-bottom:20px;-webkit-appearance:none">Acessar demonstração</button>
-      <div style="padding:14px;background:#f8f7ff;border-radius:10px;font-size:12px;color:#9ca3af;line-height:1.6;text-align:center">Dados protegidos com criptografia · LGPD</div>
+      <div class="logo-name">Psi<b>On</b></div>
+      <div class="logo-sub">Gestão para psicólogos</div>
     </div>
+
+    <div class="login-title">Bem-vinda de volta</div>
+    <div class="login-sub">Entre na sua conta para continuar</div>
+
+    <div class="err" id="l-err"><span id="l-msg"></span></div>
+
+    <div class="field">
+      <label>E-mail</label>
+      <input id="l-email" type="email" placeholder="seu@email.com" autocomplete="email" inputmode="email">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input id="l-senha" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn-login" onclick="entrar()">Entrar no PsiOn</button>
+    <div class="divider">ou</div>
+    <button class="btn-demo" onclick="demo()">Acessar demonstração</button>
+
+    <div class="lgpd">Dados protegidos · LGPD · CRP</div>
   </div>
 </div>
 
+<!-- APP -->
+<div id="app">
 
-<!-- ═══════════════════════════════════════
-     APP (shown after login)
-═══════════════════════════════════════ -->
-<div id="app" style="display:none">
-
-<!-- SIDEBAR -->
-<div class="sidebar" id="sidebar">
-  <div class="s-logo">
-    <div class="s-logo-text">Psi<span>On</span></div>
-    <div class="s-logo-sub">Gestão para psicólogos</div>
-  </div>
-  <nav class="s-nav">
-    <div class="s-section">Principal</div>
-    <button class="s-btn active" onclick="sw('home')"><i class="ti ti-home"></i>Início</button>
-    <button class="s-btn" onclick="sw('agenda')"><i class="ti ti-calendar"></i>Agenda</button>
-    <button class="s-btn" onclick="sw('pacientes')"><i class="ti ti-users"></i>Pacientes</button>
-    <div class="s-section">Clínico</div>
-    <button class="s-btn" onclick="sw('financeiro')"><i class="ti ti-chart-bar"></i>Financeiro</button>
-    <button class="s-btn" onclick="sw('relatorios')"><i class="ti ti-file-text"></i>Relatórios</button>
-    <button class="s-btn" onclick="sw('ia')"><i class="ti ti-brain"></i>Assistente IA</button>
-  </nav>
-  <div class="s-footer">
-    <div class="s-user">
-      <div class="s-avatar">DR</div>
-      <div><div class="s-name">Dra. Psicóloga</div><div class="s-role">CRP 12/00000</div></div>
+  <!-- HOME -->
+  <div id="sc-home" class="screen active">
+    <div class="topbar">
+      <div class="topbar-logo">Psi<b>On</b></div>
+      <div class="topbar-sub" id="h-greeting">Bom dia!</div>
     </div>
-  </div>
-</div>
-
-<!-- MAIN -->
-<div class="main" id="main-content">
-
-<!-- ── HOME ── -->
-<div id="screen-home" class="screen active">
-  <div class="topbar">
-    <div><div class="tb-title">Bom dia, Dra.</div><div class="tb-sub">Domingo, 7 de junho de 2025</div></div>
-    <div class="tb-right">
-      <div class="tb-btn"><i class="ti ti-bell"></i></div>
-      <div class="tb-btn"><i class="ti ti-settings"></i></div>
-    </div>
-  </div>
-  <div class="content">
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-ico" style="background:var(--pp-l);color:var(--pp)"><i class="ti ti-calendar-event"></i></div><div class="stat-lbl">Consultas hoje</div><div class="stat-val">6</div><div class="stat-sub">próxima às 09:00</div></div>
-      <div class="stat-card"><div class="stat-ico" style="background:var(--green-l);color:var(--green)"><i class="ti ti-currency-real"></i></div><div class="stat-lbl">Recebido no mês</div><div class="stat-val">R$4.200</div><div class="stat-sub">junho/2025</div></div>
-      <div class="stat-card"><div class="stat-ico" style="background:var(--pb-l);color:var(--pb)"><i class="ti ti-users"></i></div><div class="stat-lbl">Pacientes ativos</div><div class="stat-val">23</div><div class="stat-sub">+2 este mês</div></div>
-      <div class="stat-card"><div class="stat-ico" style="background:var(--amber-l);color:var(--amber)"><i class="ti ti-clock"></i></div><div class="stat-lbl">A receber</div><div class="stat-val">R$600</div><div class="stat-sub">4 pendências</div></div>
-    </div>
-    <div class="g3">
+    <div class="content">
+      <div class="stats">
+        <div class="stat"><div class="stat-val" id="s-hoje">0</div><div class="stat-lbl">Consultas hoje</div></div>
+        <div class="stat"><div class="stat-val" id="s-pac">0</div><div class="stat-lbl">Pacientes</div></div>
+        <div class="stat"><div class="stat-val" id="s-mes">R$0</div><div class="stat-lbl">Recebido/mês</div></div>
+        <div class="stat"><div class="stat-val" id="s-pend">R$0</div><div class="stat-lbl">Pendente</div></div>
+      </div>
       <div class="card">
-        <div class="sec-hd"><div class="sec-ti">Consultas de hoje</div><button class="sec-lk" onclick="sw('agenda')">ver agenda completa</button></div>
-        <div class="appt"><div class="appt-t">09:00</div><div class="appt-i"><div class="appt-n">Maria Souza</div><div class="appt-s">Sessão individual · 50min</div></div><span class="badge b-ok">Confirmado</span><button class="appt-act btn-sm" onclick="sw('nova-sessao')">Iniciar</button></div>
-        <div class="appt"><div class="appt-t">10:30</div><div class="appt-i"><div class="appt-n">João Lima</div><div class="appt-s">Avaliação inicial · 50min</div></div><span class="badge b-wt">Aguardando</span><button class="appt-act btn-sm">Iniciar</button></div>
-        <div class="appt"><div class="appt-t">14:00</div><div class="appt-i"><div class="appt-n">Ana Paula</div><div class="appt-s">Sessão individual · 50min</div></div><span class="badge b-ok">Confirmado</span><button class="appt-act btn-sm">Iniciar</button></div>
-        <div class="appt"><div class="appt-t">15:30</div><div class="appt-i"><div class="appt-n">Carlos Mendes</div><div class="appt-s">Terapia casal · 80min</div></div><span class="badge b-ok">Confirmado</span><button class="appt-act btn-sm">Iniciar</button></div>
-        <div class="appt"><div class="appt-t">17:00</div><div class="appt-i"><div class="appt-n">Fernanda Reis</div><div class="appt-s">Sessão individual · 50min</div></div><span class="badge b-wt">Aguardando</span><button class="appt-act btn-sm">Iniciar</button></div>
+        <div class="sec-title">Consultas de hoje</div>
+        <div id="h-appts"><div style="text-align:center;padding:20px;color:#9ca3af;font-size:13px">Nenhuma consulta hoje</div></div>
       </div>
-      <div>
-        <div class="card">
-          <div class="sec-ti" style="margin-bottom:13px">Acesso rápido</div>
-          <div style="display:flex;flex-direction:column;gap:9px">
-            <button class="btn btn-pp" style="width:100%;justify-content:center" onclick="sw('nova-sessao')"><i class="ti ti-plus"></i> Nova sessão</button>
-            <button class="btn btn-bl" style="width:100%;justify-content:center" onclick="sw('cadastro')"><i class="ti ti-user-plus"></i> Novo paciente</button>
-            <button class="btn btn-ol" style="width:100%;justify-content:center" onclick="sw('relatorios')"><i class="ti ti-file-text"></i> Gerar relatório</button>
-          </div>
-        </div>
-        <div class="card" style="background:linear-gradient(135deg,var(--pp-l),#ddd8ff);border-color:var(--pp-m)">
-          <div class="ia-tag"><i class="ti ti-brain" style="font-size:13px"></i> IA ativa</div>
-          <div style="font-size:13px;color:var(--pp-d);line-height:1.6">Gere resumos de sessão, relatórios clínicos e sugestões terapêuticas com IA.</div>
-          <button class="btn btn-pp btn-sm" style="margin-top:13px" onclick="sw('ia')">Usar assistente</button>
-        </div>
+      <div style="display:flex;gap:10px;flex-direction:column">
+        <button class="btn btn-pp btn-full" onclick="openModal('m-consulta')">+ Nova consulta</button>
+        <button class="btn btn-ol btn-full" onclick="goSc('pacientes')">+ Novo paciente</button>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ── AGENDA ── -->
-<div id="screen-agenda" class="screen">
-  <div class="topbar"><div><div class="tb-title">Agenda</div><div class="tb-sub">7 de junho de 2025</div></div><div class="tb-right"><button class="btn btn-pp btn-sm"><i class="ti ti-plus"></i> Nova consulta</button></div></div>
-  <div class="content">
-    <div class="card">
-      <div class="sec-hd"><div class="sec-ti">Hoje — 6 consultas</div><span class="badge b-pp">Segunda-feira</span></div>
-      <div class="appt"><div class="appt-t">09:00</div><div class="appt-i"><div class="appt-n">Maria Souza</div><div class="appt-s">Sessão individual · 50min</div></div><span class="badge b-ok">Confirmado</span><button class="appt-act btn-sm" onclick="sw('nova-sessao')"><i class="ti ti-notes"></i> Registrar</button></div>
-      <div class="appt"><div class="appt-t">10:30</div><div class="appt-i"><div class="appt-n">João Lima</div><div class="appt-s">Avaliação inicial · 50min</div></div><span class="badge b-wt">Aguardando</span><button class="appt-act btn-sm"><i class="ti ti-notes"></i> Registrar</button></div>
-      <div class="appt"><div class="appt-t">14:00</div><div class="appt-i"><div class="appt-n">Ana Paula</div><div class="appt-s">Sessão individual · 50min</div></div><span class="badge b-ok">Confirmado</span><button class="appt-act btn-sm"><i class="ti ti-notes"></i> Registrar</button></div>
-      <div class="appt"><div class="appt-t">15:30</div><div class="appt-i"><div class="appt-n">Carlos Mendes</div><div class="appt-s">Terapia casal · 80min</div></div><span class="badge b-ok">Confirmado</span><button class="appt-act btn-sm"><i class="ti ti-notes"></i> Registrar</button></div>
-      <div class="appt"><div class="appt-t">17:00</div><div class="appt-i"><div class="appt-n">Fernanda Reis</div><div class="appt-s">Sessão individual · 50min</div></div><span class="badge b-wt">Aguardando</span><button class="appt-act btn-sm"><i class="ti ti-notes"></i> Registrar</button></div>
-      <div class="appt"><div class="appt-t">18:30</div><div class="appt-i"><div class="appt-n">Lucas Oliveira</div><div class="appt-s">Sessão individual · 50min</div></div><span class="badge b-ok">Confirmado</span><button class="appt-act btn-sm"><i class="ti ti-notes"></i> Registrar</button></div>
+  <!-- PACIENTES -->
+  <div id="sc-pacientes" class="screen">
+    <div class="topbar"><div class="topbar-logo">Psi<b>On</b></div><div class="topbar-sub">Pacientes</div></div>
+    <div class="content">
+      <button class="btn btn-pp btn-full" style="margin-bottom:14px" onclick="goSc('cadastro')">+ Novo paciente</button>
+      <div class="card" id="pac-lista"><div style="text-align:center;padding:20px;color:#9ca3af;font-size:13px">Nenhum paciente cadastrado</div></div>
     </div>
   </div>
-</div>
 
-<!-- ── PACIENTES ── -->
-<div id="screen-pacientes" class="screen">
-  <div class="topbar"><div><div class="tb-title">Pacientes</div><div class="tb-sub">23 pacientes ativos</div></div><div class="tb-right"><button class="btn btn-pp btn-sm" onclick="sw('cadastro')"><i class="ti ti-user-plus"></i> Novo paciente</button></div></div>
-  <div class="content">
-    <div class="search-bar"><i class="ti ti-search" style="color:var(--mt);font-size:18px"></i><input placeholder="Buscar paciente por nome ou abordagem..."></div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <table class="ptable">
-        <thead><tr><th>Paciente</th><th>Abordagem</th><th>Desde</th><th>Sessões</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-          <tr onclick="sw('prontuario')"><td><div class="av-row"><div class="av">MS</div><div><div style="font-weight:500">Maria Souza</div><div style="font-size:12px;color:var(--mt)">32 anos</div></div></div></td><td>TCC</td><td>jan/24</td><td>18</td><td><span class="badge b-ok">Ativo</span></td><td><button class="appt-act btn-sm">Ver prontuário</button></td></tr>
-          <tr onclick="sw('prontuario')"><td><div class="av-row"><div class="av">JL</div><div><div style="font-weight:500">João Lima</div><div style="font-size:12px;color:var(--mt)">28 anos</div></div></div></td><td>Avaliação</td><td>jun/25</td><td>1</td><td><span class="badge b-new">Novo</span></td><td><button class="appt-act btn-sm">Ver prontuário</button></td></tr>
-          <tr onclick="sw('prontuario')"><td><div class="av-row"><div class="av">AP</div><div><div style="font-weight:500">Ana Paula</div><div style="font-size:12px;color:var(--mt)">45 anos</div></div></div></td><td>Psicanálise</td><td>mar/23</td><td>34</td><td><span class="badge b-ok">Ativo</span></td><td><button class="appt-act btn-sm">Ver prontuário</button></td></tr>
-          <tr onclick="sw('prontuario')"><td><div class="av-row"><div class="av">CM</div><div><div style="font-weight:500">Carlos Mendes</div><div style="font-size:12px;color:var(--mt)">38 anos</div></div></div></td><td>Casal</td><td>ago/24</td><td>12</td><td><span class="badge b-ok">Ativo</span></td><td><button class="appt-act btn-sm">Ver prontuário</button></td></tr>
-          <tr onclick="sw('prontuario')"><td><div class="av-row"><div class="av">FR</div><div><div style="font-weight:500">Fernanda Reis</div><div style="font-size:12px;color:var(--mt)">26 anos</div></div></div></td><td>TCC</td><td>fev/25</td><td>8</td><td><span class="badge b-ok">Ativo</span></td><td><button class="appt-act btn-sm">Ver prontuário</button></td></tr>
-          <tr onclick="sw('prontuario')"><td><div class="av-row"><div class="av">LO</div><div><div style="font-weight:500">Lucas Oliveira</div><div style="font-size:12px;color:var(--mt)">31 anos</div></div></div></td><td>TCC</td><td>abr/25</td><td>5</td><td><span class="badge b-ok">Ativo</span></td><td><button class="appt-act btn-sm">Ver prontuário</button></td></tr>
-          <tr onclick="sw('prontuario')"><td><div class="av-row"><div class="av">RS</div><div><div style="font-weight:500">Renata Silva</div><div style="font-size:12px;color:var(--mt)">41 anos</div></div></div></td><td>Gestalt</td><td>nov/23</td><td>22</td><td><span class="badge b-ok">Ativo</span></td><td><button class="appt-act btn-sm">Ver prontuário</button></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ── PRONTUÁRIO ── -->
-<div id="screen-prontuario" class="screen">
-  <div class="topbar"><div><div class="tb-title">Prontuário</div><div class="tb-sub">Maria Souza</div></div><div class="tb-right"><button class="btn btn-pp btn-sm" onclick="sw('nova-sessao')"><i class="ti ti-plus"></i> Nova sessão</button><button class="btn btn-ol btn-sm" onclick="sw('relatorios')"><i class="ti ti-file-text"></i> Relatório</button></div></div>
-  <div class="content">
-    <button class="back-btn" onclick="sw('pacientes')"><i class="ti ti-arrow-left"></i> Pacientes</button>
-    <div class="ph">
-      <div class="ph-av">MS</div>
-      <div style="flex:1">
-        <div class="ph-nm">Maria Souza</div>
-        <div class="ph-mt">32 anos · TCC · CRP verificado · desde jan/2024</div>
-        <span class="ph-bg">18 sessões realizadas</span>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <div style="text-align:center;padding:10px 16px;background:var(--sf);border-radius:var(--rs)"><div style="font-size:20px;font-weight:600;color:var(--pp)">18</div><div style="font-size:11px;color:var(--mt)">Sessões</div></div>
-        <div style="text-align:center;padding:10px 16px;background:var(--sf);border-radius:var(--rs)"><div style="font-size:20px;font-weight:600;color:var(--green)">R$150</div><div style="font-size:11px;color:var(--mt)">Valor/sessão</div></div>
-        <div style="text-align:center;padding:10px 16px;background:var(--sf);border-radius:var(--rs)"><div style="font-size:20px;font-weight:600;color:var(--pb)">17</div><div style="font-size:11px;color:var(--mt)">Pagas</div></div>
-      </div>
-    </div>
-    <div class="g2">
+  <!-- CADASTRO -->
+  <div id="sc-cadastro" class="screen">
+    <div class="topbar"><div class="topbar-logo">Psi<b>On</b></div><div class="topbar-sub">Novo Paciente</div></div>
+    <div class="content">
       <div class="card">
-        <div class="sec-hd"><div class="sec-ti">Histórico de sessões</div></div>
-        <div class="sess"><div class="sess-dt">05 jun 2025</div><div class="sess-prev">Paciente relatou melhora na qualidade do sono. Trabalhou-se técnicas de reestruturação cognitiva sobre pensamentos ansiosos no trabalho.</div><span class="sess-tag">TCC · Ansiedade</span></div>
-        <div class="sess"><div class="sess-dt">29 mai 2025</div><div class="sess-prev">Discussão sobre padrões de relacionamento familiar. Identificação de esquemas maladaptativos precoces relacionados à rejeição.</div><span class="sess-tag">Esquemas · Família</span></div>
-        <div class="sess"><div class="sess-dt">22 mai 2025</div><div class="sess-prev">Sessão focada em exposição gradual a situações sociais. Paciente realizou tarefa de casa com sucesso parcial.</div><span class="sess-tag">Exposição · Social</span></div>
-        <div class="sess"><div class="sess-dt">15 mai 2025</div><div class="sess-prev">Revisão dos objetivos terapêuticos. Evolução significativa na autoestima e assertividade.</div><span class="sess-tag">Evolução positiva</span></div>
-        <div class="sess"><div class="sess-dt">08 mai 2025</div><div class="sess-prev">Psicoeducação sobre distorções cognitivas. Paciente identificou catastrofização como padrão predominante.</div><span class="sess-tag">Psicoeducação</span></div>
+        <div class="card-title">Dados pessoais</div>
+        <label class="fl">Nome completo *</label>
+        <input class="fi" id="c-nome" placeholder="Nome do paciente">
+        <label class="fl">Data de nascimento</label>
+        <input class="fi" id="c-nasc" type="date">
+        <label class="fl">Telefone/WhatsApp</label>
+        <input class="fi" id="c-tel" type="tel" placeholder="(48) 99999-9999">
+        <label class="fl">E-mail</label>
+        <input class="fi" id="c-email" type="email" placeholder="email@exemplo.com">
       </div>
-      <div>
-        <div class="card">
-          <div class="card-title">Dados do paciente</div>
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--mt)">Abordagem</span><span style="font-weight:500">TCC</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--mt)">Desde</span><span style="font-weight:500">jan/2024</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--mt)">Frequência</span><span style="font-weight:500">Semanal</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--mt)">Pagamento</span><span style="font-weight:500">PIX</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--mt)">Tipo</span><span style="font-weight:500">Presencial</span></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Queixa principal</div>
-          <div style="font-size:13px;color:var(--mt);line-height:1.6">Ansiedade generalizada com foco em desempenho profissional. Dificuldade de concentração e insônia recorrente.</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Objetivos terapêuticos</div>
-          <div style="font-size:13px;color:var(--mt);line-height:1.6">Redução da ansiedade, melhora da autoestima e desenvolvimento de estratégias de enfrentamento.</div>
-        </div>
+      <div class="card">
+        <div class="card-title">Dados clínicos</div>
+        <label class="fl">Abordagem terapêutica</label>
+        <select class="fi" id="c-ab"><option value="">Selecionar</option><option>TCC</option><option>Psicanálise</option><option>Gestalt</option><option>Humanista</option><option>Sistêmica</option><option>Terapia de Casal</option><option>DBT</option><option>ACT</option></select>
+        <label class="fl">Valor da sessão (R$)</label>
+        <input class="fi" id="c-val" type="number" placeholder="150">
+        <label class="fl">Forma de pagamento</label>
+        <select class="fi" id="c-pag"><option>PIX</option><option>Dinheiro</option><option>Cartão</option><option>Plano de saúde</option></select>
+        <label class="fl">Queixa principal</label>
+        <textarea class="fi" id="c-queixa" placeholder="Motivo pelo qual buscou atendimento..."></textarea>
       </div>
+      <div style="padding:14px;background:#EEEDFE;border-radius:12px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
+        <input type="checkbox" id="c-lgpd" style="margin-top:3px;accent-color:#534AB7;width:18px;height:18px">
+        <label for="c-lgpd" style="font-size:13px;color:#3C3489;line-height:1.5;cursor:pointer">Paciente autorizou armazenamento conforme LGPD e normas do CFP.</label>
+      </div>
+      <button class="btn btn-pp btn-full" onclick="salvarPac()">Salvar paciente</button>
     </div>
   </div>
-</div>
 
-<!-- ── NOVA SESSÃO ── -->
-<div id="screen-nova-sessao" class="screen">
-  <div class="topbar"><div><div class="tb-title">Registrar Sessão</div><div class="tb-sub">Maria Souza · 7 jun 2025</div></div></div>
-  <div class="content">
-    <button class="back-btn" onclick="sw('prontuario')"><i class="ti ti-arrow-left"></i> Prontuário</button>
-    <div class="g2">
+  <!-- SESSÃO / IA -->
+  <div id="sc-sessao" class="screen">
+    <div class="topbar"><div class="topbar-logo">Psi<b>On</b></div><div class="topbar-sub" id="sess-sub">Nova Sessão</div></div>
+    <div class="content">
       <div class="card">
         <div class="card-title">Anotações da sessão</div>
-        <textarea class="fi" id="sess-txt" rows="8" placeholder="Descreva a sessão: queixas relatadas, estado emocional, intervenções utilizadas, tarefas definidas, observações clínicas..."></textarea>
-        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-pp btn-sm" onclick="analisarSessao('resumo')"><i class="ti ti-brain"></i> Resumo com IA</button>
-          <button class="btn btn-bl btn-sm" onclick="analisarSessao('sugestao')"><i class="ti ti-bulb"></i> Sugestão clínica</button>
-          <button class="btn btn-ol btn-sm" style="margin-left:auto"><i class="ti ti-device-floppy"></i> Salvar</button>
-        </div>
-      </div>
-      <div>
-        <div class="card">
-          <div class="ia-tag"><i class="ti ti-brain" style="font-size:13px"></i> Análise por IA</div>
-          <div style="font-size:13px;color:var(--mt);margin-bottom:6px">Insira as anotações e clique em "Resumo" ou "Sugestão clínica".</div>
-          <div class="ia-loading" id="sess-ld"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Analisando...</span></div>
-          <div class="ia-result" id="sess-res"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── FINANCEIRO ── -->
-<div id="screen-financeiro" class="screen">
-  <div class="topbar"><div><div class="tb-title">Financeiro</div><div class="tb-sub">junho de 2025</div></div><div class="tb-right"><button class="btn btn-pp btn-sm"><i class="ti ti-plus"></i> Registrar pagamento</button></div></div>
-  <div class="content">
-    <div class="fin-banner">
-      <div><div class="fin-ml">Recebido em junho/2025</div><div class="fin-mv">R$ 4.200,00</div></div>
-      <div><div class="fin-sl">A receber</div><div class="fin-sv">R$ 600</div></div>
-      <div><div class="fin-sl">Consultas</div><div class="fin-sv">28</div></div>
-      <div><div class="fin-sl">Ticket médio</div><div class="fin-sv">R$ 150</div></div>
-    </div>
-    <div class="g2">
-      <div class="card">
-        <div class="sec-hd"><div class="sec-ti">Movimentações recentes</div></div>
-        <div class="tr"><div class="tr-ico tr-inc"><i class="ti ti-check"></i></div><div class="tr-i"><div class="tr-n">Maria Souza</div><div class="tr-d">Hoje · PIX</div></div><div class="tr-v tv-inc">+ R$150</div></div>
-        <div class="tr"><div class="tr-ico tr-inc"><i class="ti ti-check"></i></div><div class="tr-i"><div class="tr-n">Ana Paula</div><div class="tr-d">Hoje · PIX</div></div><div class="tr-v tv-inc">+ R$150</div></div>
-        <div class="tr"><div class="tr-ico tr-pnd"><i class="ti ti-clock"></i></div><div class="tr-i"><div class="tr-n">João Lima</div><div class="tr-d">Pendente · Boleto</div></div><div class="tr-v tv-pnd">R$150</div></div>
-        <div class="tr"><div class="tr-ico tr-inc"><i class="ti ti-check"></i></div><div class="tr-i"><div class="tr-n">Carlos Mendes</div><div class="tr-d">Ontem · PIX</div></div><div class="tr-v tv-inc">+ R$200</div></div>
-        <div class="tr"><div class="tr-ico tr-pnd"><i class="ti ti-clock"></i></div><div class="tr-i"><div class="tr-n">Fernanda Reis</div><div class="tr-d">Pendente · PIX</div></div><div class="tr-v tv-pnd">R$150</div></div>
-        <div class="tr"><div class="tr-ico tr-inc"><i class="ti ti-check"></i></div><div class="tr-i"><div class="tr-n">Lucas Oliveira</div><div class="tr-d">Ontem · PIX</div></div><div class="tr-v tv-inc">+ R$150</div></div>
-      </div>
-      <div class="card">
-        <div class="sec-hd"><div class="sec-ti">Pendências</div><span class="badge b-wt">4 itens</span></div>
-        <div class="tr"><div class="tr-ico tr-pnd"><i class="ti ti-clock"></i></div><div class="tr-i"><div class="tr-n">João Lima</div><div class="tr-d">Sessão 05/06 · Boleto</div></div><div class="tr-v tv-pnd">R$150</div></div>
-        <div class="tr"><div class="tr-ico tr-pnd"><i class="ti ti-clock"></i></div><div class="tr-i"><div class="tr-n">Fernanda Reis</div><div class="tr-d">Sessão 04/06 · PIX</div></div><div class="tr-v tv-pnd">R$150</div></div>
-        <div class="tr"><div class="tr-ico tr-pnd"><i class="ti ti-clock"></i></div><div class="tr-i"><div class="tr-n">Carlos Mendes</div><div class="tr-d">Sessão 03/06 · PIX</div></div><div class="tr-v tv-pnd">R$200</div></div>
-        <div class="tr"><div class="tr-ico tr-pnd"><i class="ti ti-clock"></i></div><div class="tr-i"><div class="tr-n">Lucas Oliveira</div><div class="tr-d">Sessão 02/06 · Boleto</div></div><div class="tr-v tv-pnd">R$100</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── RELATÓRIOS ── -->
-<div id="screen-relatorios" class="screen">
-  <div class="topbar"><div><div class="tb-title">Gerador de Relatórios</div><div class="tb-sub">Selecione o tipo e o paciente</div></div></div>
-  <div class="content">
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">Paciente</div>
-      <select class="fi" id="rel-pac" style="max-width:340px">
-        <option>Maria Souza</option><option>João Lima</option><option>Ana Paula</option><option>Carlos Mendes</option><option>Fernanda Reis</option><option>Lucas Oliveira</option><option>Renata Silva</option>
-      </select>
-    </div>
-    <div class="sec-ti" style="margin-bottom:14px">Tipo de relatório</div>
-    <div class="g3x" style="margin-bottom:16px">
-      <div class="rel-card" onclick="gerarRel('clinico')"><div class="rel-ico ri-pp"><i class="ti ti-clipboard-text"></i></div><div class="rel-nm">Relatório clínico</div><div class="rel-ds">Evolução terapêutica completa</div></div>
-      <div class="rel-card" onclick="gerarRel('plano')"><div class="rel-ico ri-bl"><i class="ti ti-building-hospital"></i></div><div class="rel-nm">Para plano de saúde</div><div class="rel-ds">Formato padrão de convênio</div></div>
-      <div class="rel-card" onclick="gerarRel('atestado')"><div class="rel-ico ri-gr"><i class="ti ti-certificate"></i></div><div class="rel-nm">Atestado psicológico</div><div class="rel-ds">Documento oficial ao paciente</div></div>
-      <div class="rel-card" onclick="gerarRel('encaminhamento')"><div class="rel-ico ri-am"><i class="ti ti-send"></i></div><div class="rel-nm">Encaminhamento</div><div class="rel-ds">Carta para outro profissional</div></div>
-      <div class="rel-card" onclick="gerarRel('financeiro')"><div class="rel-ico ri-pp"><i class="ti ti-receipt"></i></div><div class="rel-nm">Relatório financeiro</div><div class="rel-ds">Sessões e pagamentos</div></div>
-      <div class="rel-card" onclick="gerarRel('evolucao')"><div class="rel-ico ri-bl"><i class="ti ti-trending-up"></i></div><div class="rel-nm">Evolução mensal</div><div class="rel-ds">Progresso no período</div></div>
-    </div>
-    <div class="card">
-      <div class="ia-tag"><i class="ti ti-brain" style="font-size:13px"></i> Gerado por IA</div>
-      <div class="ia-loading" id="rel-ld"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Gerando relatório...</span></div>
-      <div class="ia-result" id="rel-res"></div>
-      <div id="rel-acts" style="display:none;gap:10px;margin-top:14px">
-        <button class="btn btn-pp btn-sm"><i class="ti ti-download"></i> Baixar PDF</button>
-        <button class="btn btn-ol btn-sm"><i class="ti ti-copy"></i> Copiar texto</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── ASSISTENTE IA ── -->
-<div id="screen-ia" class="screen">
-  <div class="topbar"><div><div class="tb-title">Assistente IA Clínica</div><div class="tb-sub">Análise e sugestões baseadas em evidências</div></div></div>
-  <div class="content">
-    <div class="g2">
-      <div class="card">
-        <div class="ia-tag"><i class="ti ti-brain" style="font-size:13px"></i> IA clínica ativa</div>
-        <div style="font-size:13px;color:var(--mt);margin-bottom:14px;line-height:1.65">Descreva uma sessão, situação clínica ou dúvida terapêutica para obter análise, resumo ou sugestões baseadas em evidências.</div>
-        <textarea class="fi" id="ia-txt" rows="7" placeholder="Ex: Paciente de 32 anos relatou ansiedade intensa no ambiente de trabalho, dificuldade de concentração e insônia há 3 semanas. Identifica pensamentos catastróficos sobre desempenho..."></textarea>
-        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
-          <button class="btn btn-pp btn-sm" onclick="iaGeral('resumo')"><i class="ti ti-file-description"></i> Resumo clínico</button>
-          <button class="btn btn-bl btn-sm" onclick="iaGeral('sugestao')"><i class="ti ti-bulb"></i> Sugestão terapêutica</button>
+        <textarea class="fi" id="sess-txt" placeholder="Descreva a sessão: queixas, estado emocional, intervenções, tarefas..."></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+          <button class="btn btn-pp" style="flex:1;justify-content:center" onclick="analisarIA('resumo')">Resumo IA</button>
+          <button class="btn btn-ol" style="flex:1;justify-content:center" onclick="analisarIA('sugestao')">Sugestão</button>
         </div>
       </div>
       <div class="card">
-        <div class="ia-tag"><i class="ti ti-sparkles" style="font-size:13px"></i> Resultado</div>
-        <div class="ia-loading" id="ia-ld"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Analisando...</span></div>
-        <div class="ia-result" id="ia-res" style="display:block;background:transparent;padding:0;color:var(--mt);font-size:13px">O resultado aparecerá aqui após a análise.</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── CADASTRO ── -->
-<div id="screen-cadastro" class="screen">
-  <div class="topbar"><div><div class="tb-title">Novo Paciente</div><div class="tb-sub">Preencha os dados do paciente</div></div><div class="tb-right"><button class="btn btn-ol btn-sm" onclick="sw('pacientes')">Cancelar</button><button class="btn btn-pp btn-sm" onclick="salvar()"><i class="ti ti-device-floppy"></i> Salvar</button></div></div>
-  <div class="content">
-    <button class="back-btn" onclick="sw('pacientes')"><i class="ti ti-arrow-left"></i> Voltar</button>
-
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-        <div id="cad-av" onclick="document.getElementById('cad-foto').click()" style="width:72px;height:72px;border-radius:50%;background:var(--pp-l);color:var(--pp);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;border:2px dashed var(--pp-m);flex-shrink:0"><i class="ti ti-camera"></i></div>
-        <input type="file" id="cad-foto" accept="image/*" style="display:none" onchange="prevFoto(this)">
-        <div style="flex:1;min-width:200px">
-          <div class="fl" style="margin-bottom:6px">Nome completo *</div>
-          <input class="fi" id="cad-nome" placeholder="Nome do paciente" oninput="updAv()">
+        <div class="card-title">Resultado da IA</div>
+        <div class="loading" id="sess-ld"><div class="dot"></div><div class="dot"></div><div class="dot"></div> Analisando...</div>
+        <div class="ia-box" id="sess-res"></div>
+        <div id="sess-acts" style="display:none;margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-pp" style="flex:1;justify-content:center" onclick="salvarSessao()">Salvar sessão</button>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="card">
-      <div class="card-title">Dados pessoais</div>
-      <div class="fg-grid">
-        <div class="fg"><div class="fl">Data de nascimento</div><input class="fi" id="cad-nasc" type="date"></div>
-        <div class="fg"><div class="fl">CPF</div><input class="fi" id="cad-cpf" placeholder="000.000.000-00" oninput="mCPF(this)"></div>
-        <div class="fg"><div class="fl">Gênero</div><select class="fi" id="cad-gen"><option value="">Selecionar</option><option>Feminino</option><option>Masculino</option><option>Não-binário</option><option>Prefiro não informar</option></select></div>
-        <div class="fg"><div class="fl">Pronomes</div><select class="fi" id="cad-pro"><option value="">Selecionar</option><option>Ela/Dela</option><option>Ele/Dele</option><option>Elu/Delu</option></select></div>
-        <div class="fg"><div class="fl">Estado civil</div><select class="fi" id="cad-ec"><option value="">Selecionar</option><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option></select></div>
-        <div class="fg"><div class="fl">Profissão</div><input class="fi" id="cad-prof" placeholder="Ex: Professora"></div>
+  <!-- FINANCEIRO -->
+  <div id="sc-financeiro" class="screen">
+    <div class="topbar"><div class="topbar-logo">Psi<b>On</b></div><div class="topbar-sub">Financeiro</div></div>
+    <div class="content">
+      <button class="btn btn-pp btn-full" style="margin-bottom:14px" onclick="openModal('m-pagamento')">+ Registrar pagamento</button>
+      <div class="card" id="fin-lista"><div style="text-align:center;padding:20px;color:#9ca3af;font-size:13px">Nenhuma movimentação</div></div>
+    </div>
+  </div>
+
+  <!-- RELATÓRIOS -->
+  <div id="sc-relatorios" class="screen">
+    <div class="topbar"><div class="topbar-logo">Psi<b>On</b></div><div class="topbar-sub">Relatórios</div></div>
+    <div class="content">
+      <div class="card">
+        <div class="card-title">Paciente</div>
+        <select class="fi" id="rel-pac"></select>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+          <button class="btn btn-pp btn-full" onclick="gRel('clinico')">Relatório clínico</button>
+          <button class="btn btn-ol btn-full" onclick="gRel('plano')">Para plano de saúde</button>
+          <button class="btn btn-ol btn-full" onclick="gRel('atestado')">Atestado psicológico</button>
+          <button class="btn btn-ol btn-full" onclick="gRel('encaminhamento')">Encaminhamento</button>
+        </div>
+      </div>
+      <div class="card" id="rel-card" style="display:none">
+        <div class="card-title">Resultado</div>
+        <div class="loading" id="rel-ld"><div class="dot"></div><div class="dot"></div><div class="dot"></div> Gerando...</div>
+        <div class="ia-box" id="rel-res"></div>
       </div>
     </div>
+  </div>
 
-    <div class="card">
-      <div class="card-title">Contato</div>
-      <div class="fg-grid">
-        <div class="fg"><div class="fl">WhatsApp / Telefone</div><input class="fi" id="cad-tel" placeholder="(48) 99999-9999" oninput="mTel(this)"></div>
-        <div class="fg"><div class="fl">E-mail</div><input class="fi" id="cad-email" type="email" placeholder="email@exemplo.com"></div>
-        <div class="fg"><div class="fl">Contato de emergência</div><input class="fi" id="cad-emer" placeholder="Nome e telefone"></div>
-        <div class="fg"><div class="fl">Cidade / Estado</div><input class="fi" id="cad-cid" placeholder="Ex: Florianópolis, SC"></div>
-      </div>
-    </div>
+</div>
 
-    <div class="card">
-      <div class="card-title">Dados clínicos</div>
-      <div class="fg-grid">
-        <div class="fg"><div class="fl">Abordagem terapêutica</div><select class="fi" id="cad-ab"><option value="">Selecionar</option><option>TCC</option><option>Psicanálise</option><option>Gestalt</option><option>Humanista</option><option>Sistêmica</option><option>Terapia de Casal</option><option>DBT</option><option>ACT</option><option>Outra</option></select></div>
-        <div class="fg"><div class="fl">Tipo de atendimento</div><select class="fi" id="cad-tipo"><option value="">Selecionar</option><option>Presencial</option><option>Online</option><option>Híbrido</option></select></div>
-        <div class="fg"><div class="fl">Valor da sessão (R$)</div><input class="fi" id="cad-val" type="number" placeholder="150"></div>
-        <div class="fg"><div class="fl">Forma de pagamento</div><select class="fi" id="cad-pag"><option value="">Selecionar</option><option>PIX</option><option>Dinheiro</option><option>Cartão débito</option><option>Cartão crédito</option><option>Plano de saúde</option></select></div>
-        <div class="fg"><div class="fl">Frequência</div><select class="fi" id="cad-freq"><option value="">Selecionar</option><option>Semanal</option><option>Quinzenal</option><option>Mensal</option></select></div>
-        <div class="fg"><div class="fl">Data de início</div><input class="fi" id="cad-ini" type="date"></div>
-      </div>
-    </div>
+<!-- BOTTOM NAV -->
+<div class="bot-nav" id="bot-nav" style="display:none;display:flex">
+  <button class="nav-btn active" onclick="goSc('home')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>Início
+  </button>
+  <button class="nav-btn" onclick="goSc('pacientes')">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Pacientes
+  </button>
+  <button class="nav-btn" onclick="goSc('sessao')">
+    <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Sessão
+  </button>
+  <button class="nav-btn" onclick="goSc('financeiro')">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Finanças
+  </button>
+  <button class="nav-btn" onclick="goSc('relatorios')">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Relatórios
+  </button>
+</div>
 
-    <div class="card">
-      <div class="card-title">Anamnese inicial</div>
-      <div class="fg" style="margin-bottom:14px"><div class="fl">Queixa principal</div><textarea class="fi" id="cad-queixa" rows="3" placeholder="Motivo pelo qual o paciente buscou atendimento..."></textarea></div>
-      <div class="fg-grid">
-        <div class="fg"><div class="fl">Histórico de terapia anterior</div><select class="fi" id="cad-hist"><option value="">Selecionar</option><option>Nunca fez terapia</option><option>Já fez, concluiu</option><option>Já fez, interrompeu</option><option>Em acompanhamento paralelo</option></select></div>
-        <div class="fg"><div class="fl">Uso de medicação psiquiátrica</div><select class="fi" id="cad-med"><option value="">Selecionar</option><option>Não usa</option><option>Sim, com psiquiatra</option><option>Sim, com clínico geral</option><option>Em avaliação</option></select></div>
-        <div class="fg"><div class="fl">Diagnóstico prévio</div><input class="fi" id="cad-diag" placeholder="Ex: Ansiedade, Depressão, TDAH..."></div>
-        <div class="fg"><div class="fl">Situação profissional</div><select class="fi" id="cad-sit"><option value="">Selecionar</option><option>Empregado (CLT)</option><option>Autônomo</option><option>Estudante</option><option>Desempregado</option><option>Aposentado</option></select></div>
-      </div>
-      <div class="fg" style="margin-top:14px"><div class="fl">Contexto familiar e social</div><textarea class="fi" id="cad-fam" rows="3" placeholder="Composição familiar, relacionamentos, rede de apoio..."></textarea></div>
-      <div class="fg" style="margin-top:14px"><div class="fl">Objetivos terapêuticos</div><textarea class="fi" id="cad-obj" rows="3" placeholder="O que o paciente espera alcançar com a terapia..."></textarea></div>
-      <div class="fg" style="margin-top:14px"><div class="fl">Observações iniciais do psicólogo</div><textarea class="fi" id="cad-obs" rows="3" placeholder="Impressões clínicas, hipóteses diagnósticas iniciais..."></textarea></div>
-    </div>
-
-    <div class="card" style="background:linear-gradient(135deg,var(--pp-l),#ddd8ff);border-color:var(--pp-m);margin-bottom:20px">
-      <div style="display:flex;align-items:flex-start;gap:12px">
-        <input type="checkbox" id="cad-lgpd" style="margin-top:3px;accent-color:var(--pp);width:16px;height:16px">
-        <label for="cad-lgpd" style="font-size:13px;color:var(--pp-d);line-height:1.6;cursor:pointer">O paciente autorizou o armazenamento e tratamento de seus dados conforme a <strong>LGPD (Lei 13.709/2018)</strong> e as normas do CFP.</label>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:12px;padding-bottom:24px">
-      <button class="btn btn-ol" style="flex:1;justify-content:center" onclick="sw('pacientes')">Cancelar</button>
-      <button class="btn btn-pp" style="flex:2;justify-content:center" onclick="salvar()"><i class="ti ti-device-floppy"></i> Salvar paciente</button>
+<!-- MODAL CONSULTA -->
+<div class="modal-bg" id="m-consulta">
+  <div class="modal-box">
+    <div class="modal-title">Nova Consulta</div>
+    <label class="fl">Paciente</label>
+    <select class="fi" id="m-pac"></select>
+    <label class="fl">Data</label>
+    <input class="fi" id="m-data" type="date">
+    <label class="fl">Horário</label>
+    <input class="fi" id="m-hora" type="time" value="09:00">
+    <label class="fl">Tipo</label>
+    <select class="fi" id="m-tipo"><option>Sessão individual</option><option>Avaliação inicial</option><option>Terapia casal</option><option>Online</option></select>
+    <label class="fl">Status</label>
+    <select class="fi" id="m-status"><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option></select>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-ol" style="flex:1;justify-content:center" onclick="closeModal('m-consulta')">Cancelar</button>
+      <button class="btn btn-pp" style="flex:2;justify-content:center" onclick="salvarConsulta()">Salvar</button>
     </div>
   </div>
 </div>
 
-</div><!-- end main -->
-</div><!-- end app -->
+<!-- MODAL PAGAMENTO -->
+<div class="modal-bg" id="m-pagamento">
+  <div class="modal-box">
+    <div class="modal-title">Registrar Pagamento</div>
+    <label class="fl">Paciente</label>
+    <select class="fi" id="mp-pac"></select>
+    <label class="fl">Valor (R$)</label>
+    <input class="fi" id="mp-val" type="number" placeholder="150">
+    <label class="fl">Data</label>
+    <input class="fi" id="mp-data" type="date">
+    <label class="fl">Forma</label>
+    <select class="fi" id="mp-forma"><option>PIX</option><option>Dinheiro</option><option>Cartão</option><option>Plano de saúde</option></select>
+    <label class="fl">Status</label>
+    <select class="fi" id="mp-status"><option value="pago">Pago</option><option value="pendente">Pendente</option></select>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-ol" style="flex:1;justify-content:center" onclick="closeModal('m-pagamento')">Cancelar</button>
+      <button class="btn btn-pp" style="flex:2;justify-content:center" onclick="salvarPag()">Salvar</button>
+    </div>
+  </div>
+</div>
 
-<!-- MOBILE NAV -->
-<nav class="mob-nav" id="mob-nav" style="display:none">
-  <button class="m-btn active" onclick="sw('home')"><i class="ti ti-home"></i>Início</button>
-  <button class="m-btn" onclick="sw('agenda')"><i class="ti ti-calendar"></i>Agenda</button>
-  <button class="m-btn" onclick="sw('pacientes')"><i class="ti ti-users"></i>Pacientes</button>
-  <button class="m-btn" onclick="sw('financeiro')"><i class="ti ti-chart-bar"></i>Financeiro</button>
-  <button class="m-btn" onclick="sw('relatorios')"><i class="ti ti-file-text"></i>Relatórios</button>
-  <button class="m-btn" onclick="sw('ia')"><i class="ti ti-brain"></i>IA</button>
-</nav>
+<div class="toast-msg" id="toast"></div>
 
 <script>
-const navMap={home:0,agenda:1,pacientes:2,prontuario:2,'nova-sessao':2,cadastro:2,financeiro:3,relatorios:4,ia:5};
-function sw(name){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  const el=document.getElementById('screen-'+name);
-  if(el)el.classList.add('active');
-  document.querySelectorAll('.s-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.m-btn').forEach(b=>b.classList.remove('active'));
-  const idx=navMap[name];
-  if(idx!==undefined){
-    document.querySelectorAll('.s-btn')[idx+1]?.classList.add('active');
-    document.querySelectorAll('.m-btn')[idx]?.classList.add('active');
-  }
-  window.scrollTo(0,0);
-}
-function doLogin(){
+// ── STORAGE ──
+const S={
+  get(k){try{return JSON.parse(localStorage.getItem('p_'+k)||'null')}catch{return null}},
+  set(k,v){try{localStorage.setItem('p_'+k,JSON.stringify(v))}catch{}}
+};
+
+// ── STATE ──
+let pacs=S.get('pacs')||[];
+let cons=S.get('cons')||[];
+let sess=S.get('sess')||[];
+let pags=S.get('pags')||[];
+let pacAtual=null;
+
+// ── LOGIN ──
+function entrar(){
   const email=document.getElementById('l-email').value.trim();
   const senha=document.getElementById('l-senha').value;
   const err=document.getElementById('l-err');
-  if(!email||!senha){err.style.display='block';document.getElementById('l-err-msg').textContent='Preencha e-mail e senha.';return;}
+  const msg=document.getElementById('l-msg');
+  if(!email||!senha){err.style.display='block';msg.textContent='Preencha e-mail e senha.';return;}
   err.style.display='none';
-  const btn=document.getElementById('l-btn');
-  btn.textContent='Entrando...';btn.style.opacity='0.8';
+  const btn=document.querySelector('.btn-login');
+  btn.textContent='Entrando...';
+  S.set('user',{email,nome:email.split('@')[0]});
   setTimeout(()=>{
-    document.getElementById('screen-login').style.display='none';
+    document.getElementById('login').style.display='none';
     document.getElementById('app').style.display='block';
-    document.getElementById('mob-nav').style.display='flex';
-    btn.textContent='Entrar no PsiOn';btn.style.opacity='1';
-  },800);
+    document.getElementById('bot-nav').style.display='flex';
+    btn.textContent='Entrar no PsiOn';
+    initApp();
+  },600);
 }
-function doDemo(){
-  document.getElementById('l-email').value='dra@psion.com.br';
-  document.getElementById('l-senha').value='123456';
-  doLogin();
+function demo(){
+  document.getElementById('l-email').value='demo@psion.com.br';
+  document.getElementById('l-senha').value='psion2025';
+  entrar();
 }
-function togglePwd(){
-  const i=document.getElementById('l-senha');
-  const e=document.getElementById('eye-btn');
-  i.type=i.type==='password'?'text':'password';
-  e.className=i.type==='password'?'ti ti-eye':'ti ti-eye-off';
+
+// ── INIT ──
+function initApp(){
+  const user=S.get('user')||{};
+  const h=new Date().getHours();
+  const g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+  document.getElementById('h-greeting').textContent=g+', '+(user.nome||'Dra.')+'!';
+  renderHome();
 }
-async function callIA(prompt,ldId,resId,actId){
-  const ld=document.getElementById(ldId),res=document.getElementById(resId);
-  ld.style.display='flex';res.style.display='none';
-  if(actId)document.getElementById(actId).style.display='none';
-  try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-    const d=await r.json();
-    const txt=d.content?.map(i=>i.text||'').join('')||'Não foi possível gerar.';
-    ld.style.display='none';res.style.display='block';res.textContent=txt;
-    if(actId)document.getElementById(actId).style.display='flex';
-  }catch(e){ld.style.display='none';res.style.display='block';res.textContent='Erro ao conectar com a IA. Tente novamente.';}
+
+// ── NAV ──
+function goSc(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById('sc-'+name);
+  if(el)el.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const map={home:0,pacientes:1,sessao:2,financeiro:3,relatorios:4,cadastro:1};
+  const idx=map[name];
+  if(idx!==undefined)document.querySelectorAll('.nav-btn')[idx]?.classList.add('active');
+  window.scrollTo(0,0);
+  if(name==='home')renderHome();
+  if(name==='pacientes')renderPacs();
+  if(name==='financeiro')renderFin();
+  if(name==='relatorios')renderRelSel();
+  if(name==='sessao'){
+    document.getElementById('sess-txt').value='';
+    document.getElementById('sess-res').style.display='none';
+    document.getElementById('sess-res').textContent='';
+    document.getElementById('sess-acts').style.display='none';
+  }
 }
-function analisarSessao(t){
+
+// ── HOME ──
+function renderHome(){
+  const hoje=new Date().toISOString().split('T')[0];
+  const cHoje=cons.filter(c=>c.data===hoje);
+  document.getElementById('s-hoje').textContent=cHoje.length;
+  document.getElementById('s-pac').textContent=pacs.length;
+  const mes=new Date().getMonth(),ano=new Date().getFullYear();
+  const pgMes=pags.filter(p=>{try{const d=new Date(p.data+'T12:00');return d.getMonth()===mes&&d.getFullYear()===ano&&p.status==='pago'}catch{return false}});
+  const pgPend=pags.filter(p=>p.status==='pendente');
+  document.getElementById('s-mes').textContent='R$'+pgMes.reduce((a,p)=>a+(+p.val||0),0);
+  document.getElementById('s-pend').textContent='R$'+pgPend.reduce((a,p)=>a+(+p.val||0),0);
+  const el=document.getElementById('h-appts');
+  if(!cHoje.length){el.innerHTML='<div style="text-align:center;padding:16px;color:#9ca3af;font-size:13px">Nenhuma consulta hoje</div>';return;}
+  el.innerHTML=cHoje.sort((a,b)=>a.hora.localeCompare(b.hora)).map(c=>{
+    const pac=pacs.find(p=>p.id===c.pacId)||{nome:c.pacNome||'Paciente'};
+    const badge=c.status==='confirmado'?'b-ok':'b-wt';
+    const label=c.status==='confirmado'?'Confirmado':'Aguardando';
+    return '<div class="appt"><div class="appt-t">'+c.hora+'</div><div style="flex:1"><div class="appt-n">'+pac.nome+'</div><div class="appt-s">'+c.tipo+'</div></div><span class="badge '+badge+'">'+label+'</span></div>';
+  }).join('');
+}
+
+// ── PACIENTES ──
+function renderPacs(){
+  const el=document.getElementById('pac-lista');
+  if(!pacs.length){el.innerHTML='<div style="text-align:center;padding:20px;color:#9ca3af;font-size:13px">Nenhum paciente cadastrado</div>';return;}
+  el.innerHTML=pacs.map(p=>{
+    const ini=p.nome.split(' ').filter(w=>w.length>1).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const nS=sess.filter(s=>s.pacId===p.id).length;
+    return '<div class="pat-item" onclick="abrirSessao(\''+p.id+'\')"><div class="av">'+ini+'</div><div style="flex:1"><div style="font-size:14px;font-weight:500">'+p.nome+'</div><div style="font-size:12px;color:#6b7280">'+(p.abordagem||'—')+' · '+nS+' sessão'+(nS!==1?'ões':'')+'</div></div><div style="color:#534AB7;font-size:13px">→</div></div>';
+  }).join('');
+}
+function abrirSessao(id){
+  pacAtual=pacs.find(p=>p.id===id)||null;
+  if(pacAtual)document.getElementById('sess-sub').textContent='Sessão · '+pacAtual.nome;
+  goSc('sessao');
+}
+function salvarPac(){
+  const nome=document.getElementById('c-nome').value.trim();
+  if(!nome){toast('Nome é obrigatório.','err');return;}
+  if(!document.getElementById('c-lgpd').checked){toast('Confirme a autorização LGPD.','err');return;}
+  const pac={id:'p'+Date.now(),nome,nascimento:document.getElementById('c-nasc').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,abordagem:document.getElementById('c-ab').value,val:document.getElementById('c-val').value,pagamento:document.getElementById('c-pag').value,queixa:document.getElementById('c-queixa').value,data:new Date().toISOString()};
+  pacs.unshift(pac);S.set('pacs',pacs);
+  document.getElementById('c-nome').value='';
+  document.getElementById('c-lgpd').checked=false;
+  toast('Paciente '+nome+' cadastrado!','ok');
+  pacAtual=pac;
+  goSc('sessao');
+}
+
+// ── SESSÃO / IA ──
+function salvarSessao(){
   const txt=document.getElementById('sess-txt').value.trim();
-  if(!txt){alert('Descreva a sessão antes de analisar.');return;}
-  const p=t==='resumo'?`Você é assistente clínico para psicólogos. Gere resumo clínico conciso em português desta sessão (máximo 8 linhas, formato prontuário): "${txt}"`:`Você é assistente clínico para psicólogos. Sugira 3 intervenções terapêuticas adequadas em português, de forma prática e fundamentada: "${txt}"`;
-  callIA(p,'sess-ld','sess-res',null);
+  if(!txt){toast('Descreva a sessão.','err');return;}
+  const res=document.getElementById('sess-res');
+  const resumoIA=res.style.display!=='none'?res.textContent:'';
+  const s={id:'s'+Date.now(),pacId:pacAtual?.id||'',data:new Date().toISOString().split('T')[0],texto:txt,resumoIA};
+  sess.unshift(s);S.set('sess',sess);
+  toast('Sessão salva!','ok');
+  document.getElementById('sess-txt').value='';
+  res.style.display='none';
 }
-function gerarRel(t){
-  const pac=document.getElementById('rel-pac').value;
+async function analisarIA(tipo){
+  const txt=document.getElementById('sess-txt').value.trim();
+  if(!txt){toast('Descreva a sessão primeiro.','err');return;}
+  const ld=document.getElementById('sess-ld');
+  const res=document.getElementById('sess-res');
+  const acts=document.getElementById('sess-acts');
+  ld.style.display='block';res.style.display='none';acts.style.display='none';
+  const p=tipo==='resumo'?'Gere resumo clínico conciso em português desta sessão (máximo 8 linhas, formato prontuário): "'+txt+'"':'Sugira 3 intervenções terapêuticas adequadas em português: "'+txt+'"';
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:p}]})});
+    const d=await r.json();
+    const t=d.content?.map(i=>i.text||'').join('')||'Não foi possível gerar.';
+    ld.style.display='none';res.style.display='block';res.textContent=t;acts.style.display='flex';
+  }catch(e){ld.style.display='none';res.style.display='block';res.textContent='Erro ao conectar com a IA.';}
+}
+
+// ── FINANCEIRO ──
+function renderFin(){
+  const el=document.getElementById('fin-lista');
+  if(!pags.length){el.innerHTML='<div style="text-align:center;padding:20px;color:#9ca3af;font-size:13px">Nenhuma movimentação</div>';return;}
+  el.innerHTML=pags.map(p=>{
+    const pac=pacs.find(x=>x.id===p.pacId)||{nome:p.pacNome||'Paciente'};
+    const cor=p.status==='pago'?'#3B6D11':'#854F0B';
+    const bg=p.status==='pago'?'#EAF3DE':'#FAEEDA';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0"><div style="flex:1"><div style="font-size:14px;font-weight:500">'+pac.nome+'</div><div style="font-size:12px;color:#6b7280">'+new Date(p.data+'T12:00').toLocaleDateString('pt-BR')+' · '+p.forma+'</div></div><div style="background:'+bg+';color:'+cor+';padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500">'+(p.status==='pago'?'+ ':'')+'R$'+p.val+'</div></div>';
+  }).join('');
+}
+function salvarPag(){
+  const pacId=document.getElementById('mp-pac').value;
+  const pac=pacs.find(p=>p.id===pacId);
+  const pg={id:'pg'+Date.now(),pacId,pacNome:pac?.nome||'Paciente',val:document.getElementById('mp-val').value,data:document.getElementById('mp-data').value,forma:document.getElementById('mp-forma').value,status:document.getElementById('mp-status').value};
+  pags.unshift(pg);S.set('pags',pags);
+  closeModal('m-pagamento');renderFin();renderHome();toast('Pagamento registrado!','ok');
+}
+
+// ── RELATÓRIOS ──
+function renderRelSel(){
+  const sel=document.getElementById('rel-pac');
+  sel.innerHTML=pacs.length?pacs.map(p=>'<option value="'+p.id+'">'+p.nome+'</option>').join(''):'<option>Cadastre pacientes primeiro</option>';
+}
+async function gRel(tipo){
+  const pacId=document.getElementById('rel-pac').value;
+  const pac=pacs.find(p=>p.id===pacId)||{nome:'Paciente',abordagem:'',queixa:''};
+  const nS=sess.filter(s=>s.pacId===pacId).length;
+  const card=document.getElementById('rel-card');
+  const ld=document.getElementById('rel-ld');
+  const res=document.getElementById('rel-res');
+  card.style.display='block';ld.style.display='block';res.style.display='none';
   const ps={
-    clinico:`Você é psicólogo gerando relatório clínico formal em português para ${pac}. Inclua: identificação, queixa principal, histórico, evolução, técnicas utilizadas, prognóstico. Formato profissional de prontuário.`,
-    plano:`Você é psicólogo gerando relatório para plano de saúde em português para ${pac}. Inclua: dados do paciente, CID-11, sessões realizadas, evolução clínica e necessidade de continuidade. Formato padrão de convênio.`,
-    atestado:`Você é psicólogo gerando atestado psicológico formal em português para ${pac}. Inclua: declaração de acompanhamento, período, sessões realizadas, observações. Tom formal e objetivo.`,
-    encaminhamento:`Você é psicólogo gerando carta de encaminhamento em português para ${pac}. Inclua: motivo, histórico relevante, tratamento realizado e pedido de avaliação especializada. Tom cordial e profissional.`,
-    financeiro:`Gere relatório financeiro em português para paciente ${pac} referente a junho/2025. Inclua: número de sessões, valor, total recebido, pendências e resumo.`,
-    evolucao:`Você é psicólogo gerando relatório de evolução mensal em português para ${pac} em junho/2025. Inclua: objetivos, progressos, desafios, intervenções e metas para o próximo mês.`
+    clinico:'Gere relatório clínico formal para '+pac.nome+'. Abordagem: '+(pac.abordagem||'não informada')+'. Sessões: '+nS+'. Inclua identificação, queixa, evolução, técnicas e prognóstico.',
+    plano:'Gere relatório para plano de saúde para '+pac.nome+'. '+nS+' sessões. Inclua CID-11, evolução e necessidade de continuidade.',
+    atestado:'Gere atestado psicológico formal para '+pac.nome+'. '+nS+' sessões. Tom formal e objetivo.',
+    encaminhamento:'Gere carta de encaminhamento para '+pac.nome+'. Inclua histórico, tratamento e pedido de avaliação.'
   };
-  callIA(ps[t],'rel-ld','rel-res','rel-acts');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:ps[tipo]}]})});
+    const d=await r.json();
+    const t=d.content?.map(i=>i.text||'').join('')||'Erro ao gerar.';
+    ld.style.display='none';res.style.display='block';res.textContent=t;
+  }catch(e){ld.style.display='none';res.style.display='block';res.textContent='Erro ao conectar com a IA.';}
 }
-function iaGeral(t){
-  const txt=document.getElementById('ia-txt').value.trim();
-  if(!txt){alert('Descreva a situação clínica antes de continuar.');return;}
-  const p=t==='resumo'?`Você é assistente clínico para psicólogos. Gere resumo clínico conciso em português: "${txt}"`:`Você é assistente clínico para psicólogos. Sugira 3 intervenções terapêuticas fundamentadas em português com base neste relato: "${txt}"`;
-  callIA(p,'ia-ld','ia-res',null);
+
+// ── MODAIS ──
+function openModal(id){
+  const m=document.getElementById(id);
+  if(!m)return;
+  if(id==='m-consulta'||id==='m-pagamento'){
+    const selId=id==='m-consulta'?'m-pac':'mp-pac';
+    document.getElementById(selId).innerHTML=pacs.length?pacs.map(p=>'<option value="'+p.id+'">'+p.nome+'</option>').join(''):'<option>Sem pacientes</option>';
+    document.getElementById(id==='m-consulta'?'m-data':'mp-data').value=new Date().toISOString().split('T')[0];
+  }
+  m.style.display='flex';m.classList.add('open');
 }
-function updAv(){
-  const n=document.getElementById('cad-nome').value.trim();
-  const av=document.getElementById('cad-av');
-  if(n){const p=n.split(' ');av.innerHTML=(p.length>=2?p[0][0]+p[p.length-1][0]:n.substring(0,2)).toUpperCase();av.style.fontSize='22px';}
-  else{av.innerHTML='<i class="ti ti-camera"></i>';av.style.fontSize='24px';}
+function closeModal(id){const m=document.getElementById(id);m.classList.remove('open');m.style.display='none';}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open'),m.style.display='none';}));
+function salvarConsulta(){
+  const pacId=document.getElementById('m-pac').value;
+  const pac=pacs.find(p=>p.id===pacId);
+  if(!pac&&pacs.length){toast('Selecione um paciente.','err');return;}
+  const c={id:'c'+Date.now(),pacId,pacNome:pac?.nome||'Paciente',data:document.getElementById('m-data').value,hora:document.getElementById('m-hora').value,tipo:document.getElementById('m-tipo').value,status:document.getElementById('m-status').value};
+  cons.unshift(c);S.set('cons',cons);
+  closeModal('m-consulta');renderHome();toast('Consulta agendada!','ok');
 }
-function prevFoto(input){
-  if(input.files&&input.files[0]){const r=new FileReader();r.onload=e=>{const av=document.getElementById('cad-av');av.style.backgroundImage='url('+e.target.result+')';av.style.backgroundSize='cover';av.style.backgroundPosition='center';av.innerHTML='';};r.readAsDataURL(input.files[0]);}
+
+// ── TOAST ──
+function toast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast-msg '+(type||'ok');t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);
 }
-function mCPF(el){let v=el.value.replace(/\D/g,'').substring(0,11);v=v.replace(/(\d{3})(\d)/,'$1.$2');v=v.replace(/(\d{3})(\d)/,'$1.$2');v=v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');el.value=v;}
-function mTel(el){let v=el.value.replace(/\D/g,'').substring(0,11);if(v.length>10)v=v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');else v=v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');el.value=v;}
-function salvar(){
-  const n=document.getElementById('cad-nome').value.trim();
-  if(!n){alert('O nome é obrigatório.');return;}
-  if(!document.getElementById('cad-lgpd').checked){alert('Confirme a autorização LGPD do paciente.');return;}
-  alert('Paciente '+n+' cadastrado com sucesso!');
-  sw('pacientes');
-}
+
+// ── AUTO LOGIN ──
+window.addEventListener('load',()=>{
+  const user=S.get('user');
+  if(user){
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('bot-nav').style.display='flex';
+    initApp();
+  }
+});
 </script>
 </body>
 </html>
