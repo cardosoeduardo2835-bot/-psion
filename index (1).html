@@ -1,0 +1,2196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<title>PsiOn — Prontuário Inteligente</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#534AB7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PsiOn">
+<link rel="apple-touch-icon" href="/icon-512.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window._supaErr=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onerror="window._jspdfErr=true"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --pp:#534AB7;--pp-l:#EEEDFE;--pp-d:#3C3489;--pp-m:#AFA9EC;
+  --gr:#2d6a4f;--gr-l:#d8f3dc;--am:#854F0B;--am-l:#FAEEDA;
+  --bl:#185FA5;--bl-l:#E6F1FB;--red:#A32D2D;--red-l:#FCEBEB;
+  --tx:#1a1a2e;--mt:#6b7280;--bd:#e5e7eb;--sf:#f7f6ff;--bg:white;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--sf);color:var(--tx);min-height:100vh}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;background:white;z-index:9999;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.lw{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.lb{width:100%;max-width:400px}
+.logo-c{text-align:center;margin-bottom:32px}
+.logo-img{width:88px;height:88px;border-radius:22px;overflow:hidden;display:inline-block;margin-bottom:12px;box-shadow:0 8px 28px rgba(83,74,183,0.35)}
+.logo-img img{width:100%;height:100%;object-fit:cover}
+.logo-fallback{width:88px;height:88px;border-radius:22px;background:linear-gradient(135deg,#2D2580,#534AB7);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px}
+.logo-t{font-family:'Playfair Display',serif;font-size:30px;color:var(--tx)}
+.logo-t span{color:var(--pp)}
+.logo-s{font-size:13px;color:var(--mt);margin-top:4px}
+.lh{font-size:22px;font-weight:600;text-align:center;margin-bottom:6px}
+.ls{font-size:14px;color:var(--mt);text-align:center;margin-bottom:28px}
+.lf{margin-bottom:16px}
+.ll{display:block;font-size:11px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.li{width:100%;padding:15px 16px;border:2px solid var(--bd);border-radius:14px;font-size:16px;font-family:'DM Sans',sans-serif;background:var(--sf);color:var(--tx);-webkit-appearance:none;transition:border-color 0.15s}
+.li:focus{outline:none;border-color:var(--pp);background:white}
+.lerr{display:none;background:var(--red-l);border:1px solid #fecaca;border-radius:10px;padding:12px;font-size:13px;color:var(--red);margin-bottom:14px}
+.lbtn{width:100%;padding:16px;background:linear-gradient(135deg,#534AB7,#6B5FCC);color:white;border:none;border-radius:14px;font-size:16px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;-webkit-appearance:none;box-shadow:0 4px 20px rgba(83,74,183,0.4);margin-top:4px;transition:opacity 0.15s}
+.lbtn:disabled{opacity:0.7}
+.ldiv{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--mt);font-size:13px}
+.ldiv::before,.ldiv::after{content:'';flex:1;height:1px;background:var(--bd)}
+.lbtn2{width:100%;padding:14px;background:white;color:var(--pp);border:2px solid var(--bd);border-radius:14px;font-size:15px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;-webkit-appearance:none}
+.llgpd{margin-top:20px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6}
+
+/* ── APP LAYOUT ── */
+#app-screen{display:none}
+.topbar{background:linear-gradient(135deg,#2D2580,#534AB7);padding:18px 20px 14px;color:white;position:sticky;top:0;z-index:100}
+.tb-row{display:flex;align-items:center;justify-content:space-between}
+.tb-logo{font-family:'Playfair Display',serif;font-size:22px;color:white}
+.tb-logo span{color:#C4BEFF}
+.tb-sub{font-size:12px;color:rgba(255,255,255,0.6);margin-top:3px}
+.tb-actions{display:flex;gap:8px}
+.tb-btn{background:rgba(255,255,255,0.15);border:none;border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;font-size:17px}
+.content{padding:16px;padding-bottom:80px}
+.screen{display:none}.screen.active{display:block}
+
+/* ── CARDS ── */
+.card{background:white;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 2px 12px rgba(83,74,183,0.07)}
+.card-title{font-size:11px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:14px}
+.sec-title{font-size:16px;font-weight:600;margin-bottom:14px;color:var(--tx)}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.stat{background:white;border-radius:14px;padding:16px;box-shadow:0 2px 12px rgba(83,74,183,0.07)}
+.stat-ico{font-size:24px;margin-bottom:8px}
+.stat-val{font-size:22px;font-weight:700;color:var(--tx)}
+.stat-lbl{font-size:11px;color:var(--mt);margin-top:3px}
+
+/* ── BADGES ── */
+.badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500;display:inline-block}
+.b-ok{background:var(--gr-l);color:var(--gr)}
+.b-wt{background:var(--am-l);color:var(--am)}
+.b-pp{background:var(--pp-l);color:var(--pp)}
+.b-bl{background:var(--bl-l);color:var(--bl)}
+
+/* ── PATIENTS ── */
+.pac-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #f3f3f3;cursor:pointer}
+.pac-item:last-child{border-bottom:none}
+.av{width:44px;height:44px;border-radius:50%;background:var(--pp-l);color:var(--pp);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.pac-name{font-size:15px;font-weight:500;color:var(--tx)}
+.pac-meta{font-size:12px;color:var(--mt);margin-top:2px}
+
+/* ── TABS ── */
+.tabs{display:flex;background:var(--sf);border-radius:12px;padding:4px;margin-bottom:16px;gap:4px}
+.tab{flex:1;padding:9px 6px;border:none;background:transparent;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--mt);cursor:pointer;transition:all 0.15s;text-align:center}
+.tab.active{background:white;color:var(--pp);box-shadow:0 2px 8px rgba(83,74,183,0.12)}
+
+/* ── PRONTUÁRIO ── */
+.pron-header{display:flex;align-items:center;gap:14px;padding:16px;background:white;border-radius:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(83,74,183,0.07)}
+.pron-av{width:56px;height:56px;border-radius:50%;background:var(--pp-l);color:var(--pp);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0}
+.sess-card{background:white;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(83,74,183,0.06);border-left:3px solid var(--pp)}
+.sess-card.familiar{border-left-color:var(--gr)}
+.sess-card.online{border-left-color:var(--bl)}
+.sess-date{font-size:12px;color:var(--pp);font-weight:600;margin-bottom:6px}
+.sess-card.familiar .sess-date{color:var(--gr)}
+.sess-card.online .sess-date{color:var(--bl)}
+.sess-text{font-size:13px;color:var(--mt);line-height:1.6}
+.sess-ia{margin-top:10px;background:var(--pp-l);border-radius:10px;padding:12px;font-size:12px;color:var(--pp-d);line-height:1.6}
+.empty-state{text-align:center;padding:32px 20px;color:var(--mt)}
+.empty-icon{font-size:40px;display:block;margin-bottom:10px}
+.empty-text{font-size:14px}
+
+/* ── SESSÃO / GRAVAÇÃO ── */
+.rec-card{background:linear-gradient(135deg,var(--pp-l),#ddd8ff);border-radius:16px;padding:18px;margin-bottom:14px}
+.rec-title{font-size:15px;font-weight:600;color:var(--pp-d);margin-bottom:6px}
+.rec-sub{font-size:13px;color:var(--pp-d);opacity:0.8;margin-bottom:14px}
+.rec-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rec-timer{font-size:24px;font-weight:700;color:var(--pp);font-variant-numeric:tabular-nums;display:none}
+.rec-pulse{display:none;width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulse 0.8s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.3)}}
+.rec-status{font-size:13px;color:var(--pp-d);margin-top:12px;display:none;padding:10px;background:rgba(83,74,183,0.1);border-radius:10px}
+.transcr-live{background:white;border-radius:12px;padding:14px;margin-top:12px;font-size:13px;color:var(--tx);line-height:1.65;min-height:60px;display:none}
+
+/* ── IA RESULT ── */
+.ia-result{background:var(--pp-l);border-radius:12px;padding:16px;font-size:14px;color:var(--pp-d);line-height:1.75;white-space:pre-wrap;display:none}
+.ia-loading{display:none;padding:12px 0;color:var(--pp);font-size:13px;align-items:center;gap:8px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--pp);animation:bo 1s infinite;display:inline-block}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bo{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
+
+/* ── FORM ── */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:11px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px}
+.fi{width:100%;padding:13px 14px;border:1.5px solid var(--bd);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;background:var(--sf);color:var(--tx);-webkit-appearance:none;transition:border-color 0.15s}
+.fi:focus{outline:none;border-color:var(--pp);background:white}
+textarea.fi{resize:vertical;min-height:100px}
+select.fi{-webkit-appearance:none;appearance:none}
+.fg-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 18px;border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;border:none;-webkit-appearance:none;transition:all 0.15s}
+.btn-full{width:100%;margin-bottom:10px}
+.btn-pp{background:var(--pp);color:white;box-shadow:0 3px 12px rgba(83,74,183,0.3)}
+.btn-pp:active{opacity:0.85}
+.btn-bl{background:var(--bl);color:white}
+.btn-gr{background:var(--gr);color:white}
+.btn-ol{background:white;color:var(--pp);border:2px solid var(--pp)}
+.btn-sm{padding:9px 14px;font-size:13px}
+.btn-red{background:var(--red);color:white}
+
+/* ── DOCS ── */
+.doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.doc-card{background:white;border-radius:14px;padding:16px;border:2px solid var(--bd);cursor:pointer;transition:all 0.15s;text-align:center}
+.doc-card:active{border-color:var(--pp);background:var(--pp-l)}
+.doc-icon{font-size:28px;display:block;margin-bottom:8px}
+.doc-name{font-size:13px;font-weight:600;color:var(--tx)}
+.doc-desc{font-size:11px;color:var(--mt);margin-top:3px}
+
+/* ── FINANCEIRO ── */
+.fin-banner{background:linear-gradient(135deg,#2D2580,#534AB7);border-radius:16px;padding:20px;margin-bottom:14px;color:white}
+.fin-total{font-size:28px;font-weight:700;margin:4px 0}
+.fin-row{display:flex;gap:20px;margin-top:12px}
+.fin-mini label{font-size:11px;color:rgba(255,255,255,0.6)}
+.fin-mini div{font-size:16px;font-weight:600;margin-top:2px}
+.tr{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f3f3f3}
+.tr:last-child{border-bottom:none}
+.tr-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+
+/* ── AGENDA ── */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:14px}
+.cal-lbl{text-align:center;font-size:10px;color:var(--mt);font-weight:600;padding:4px 0;text-transform:uppercase}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--tx);position:relative;background:white}
+.cal-day.today{background:var(--pp);color:white}
+.cal-day.has-event::after{content:'';position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%;background:var(--am)}
+.cal-day.today.has-event::after{background:white}
+.cal-day.other{color:var(--bd)}
+.appt-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f3f3f3}
+.appt-item:last-child{border-bottom:none}
+.appt-time{background:var(--pp-l);color:var(--pp);font-size:13px;font-weight:600;padding:6px 10px;border-radius:10px;min-width:56px;text-align:center;flex-shrink:0}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:5000;display:none;align-items:flex-end}
+.modal-bg.open{display:flex}
+.modal-box{background:white;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-title{font-size:18px;font-weight:600;margin-bottom:20px;color:var(--tx)}
+.modal-btns{display:flex;gap:10px;margin-top:16px}
+.modal-btns .btn{flex:1;margin-bottom:0}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:80px;left:16px;right:16px;background:var(--tx);color:white;padding:14px 18px;border-radius:14px;font-size:14px;z-index:9998;text-align:center;display:none;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.toast.ok{background:var(--gr)}
+.toast.err{background:var(--red)}
+.toast.info{background:var(--bl)}
+
+/* ── NAV ── */
+.bot-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--bd);display:none;z-index:200;padding:6px 0 4px;box-shadow:0 -4px 16px rgba(0,0,0,0.06)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--mt);font-size:10px;font-family:'DM Sans',sans-serif;padding:5px 0;-webkit-appearance:none}
+.nb svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nb.active{color:var(--pp)}
+
+@media(min-width:768px){
+  .lw{background:linear-gradient(135deg,#f0eeff,#e8e5ff)}
+  .lb{background:white;border-radius:20px;padding:48px;box-shadow:0 20px 60px rgba(83,74,183,0.15)}
+  .content{padding:24px;padding-bottom:30px}
+  .bot-nav{display:none !important}
+  body{padding-bottom:0}
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .doc-grid{grid-template-columns:repeat(3,1fr)}
+  .fg-2{grid-template-columns:repeat(3,1fr)}
+}
+
+/* ── PREMIUM DESIGN ── */
+.card{transition:box-shadow 0.15s}
+.card:hover{box-shadow:0 4px 20px rgba(83,74,183,0.1)}
+.pac-item:hover{background:var(--sf);border-radius:12px;margin:0 -8px;padding:12px 8px}
+.nb svg{transition:transform 0.15s}
+.nb.active svg{transform:scale(1.1)}
+.btn-pp:hover{box-shadow:0 6px 20px rgba(83,74,183,0.4);transform:translateY(-1px)}
+.doc-card:hover{border-color:var(--pp);transform:translateY(-2px);box-shadow:0 8px 20px rgba(83,74,183,0.12)}
+.sess-card{transition:box-shadow 0.15s}
+.sess-card:hover{box-shadow:0 4px 16px rgba(83,74,183,0.1)}
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--pp-m);border-radius:4px}
+/* Better topbar gradient */
+.topbar{box-shadow:0 4px 20px rgba(83,74,183,0.25)}
+/* Better cards on desktop */
+@media(min-width:768px){
+  .card{border-radius:20px;padding:24px}
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .doc-grid{grid-template-columns:repeat(3,1fr)}
+}
+
+
+/* ── PREMIUM UX IMPROVEMENTS ── */
+.sess-tipo-btn:hover{opacity:0.85;transform:translateY(-1px)}
+.doc-card{transition:all 0.15s}
+.doc-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(83,74,183,0.15)}
+.stat{transition:all 0.15s;cursor:default}
+.stat:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(83,74,183,0.1)}
+/* Session type color variants */
+.sess-card.presencial{border-left-color:var(--pp);background:white}
+.sess-card.familiar{border-left-color:var(--gr);background:white}
+.sess-card.online{border-left-color:var(--bl);background:white}
+.sess-ia{background:var(--sf);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--mt);line-height:1.6}
+/* Better empty states */
+.empty-state{padding:28px 16px;text-align:center;color:var(--mt)}
+.empty-icon{font-size:36px;display:block;margin-bottom:10px;opacity:0.7}
+.empty-text{font-size:14px;line-height:1.5}
+/* Quick action buttons on dashboard */
+button:focus{outline:2px solid var(--pp);outline-offset:2px}
+/* Better transcription area */
+#transcr-live{font-size:14px;line-height:1.8;color:var(--tx);max-height:200px;overflow-y:auto;background:white;border-radius:10px;padding:14px;border:1px solid var(--bd)}
+/* IA result prettier */
+.ia-result{border-radius:14px;font-size:14px;line-height:1.8}
+/* Tabs premium */
+.tab{font-size:13px;font-weight:500}
+.tab.active{font-weight:600}
+/* Better badges */
+.badge{letter-spacing:0.2px}
+/* Recording pulse animation */
+#rec-pulse{animation:pulse-rec 0.8s ease-in-out infinite}
+@keyframes pulse-rec{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:0.6}}
+/* Loading dots */
+.ia-loading{gap:6px}
+/* Better topbar on mobile */
+@media(max-width:768px){
+  .topbar{padding:14px 16px 12px}
+  .content{padding:14px !important;padding-bottom:80px !important}
+  .modal-box{border-radius:20px 20px 0 0}
+  .stats{grid-template-columns:1fr 1fr !important}
+  #pron-stats{grid-template-columns:1fr 1fr !important}
+  .fg-2{grid-template-columns:1fr !important}
+  .doc-grid{grid-template-columns:1fr 1fr !important}
+  * {-webkit-text-size-adjust:100%}
+  input,select,textarea{font-size:16px !important} /* prevent zoom on iOS */
+}
+
+</style>
+</head>
+<body>
+
+<style>
+/* DESKTOP SIDEBAR */
+@media(min-width:769px){
+  .bot-nav{display:none !important}
+  #app-screen{display:flex !important;min-height:100vh}
+  .sidebar{display:flex;flex-direction:column;width:240px;background:linear-gradient(180deg,#1a1a2e 0%,#2D2580 100%);min-height:100vh;position:fixed;left:0;top:0;bottom:0;z-index:100;padding:24px 0;overflow-y:auto}
+  .main-area{margin-left:240px;flex:1;min-height:100vh;max-width:calc(100vw - 240px)}
+  .sidebar-logo{font-family:'Playfair Display',serif;font-size:22px;color:white;padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,0.1)}
+  .sidebar-logo span{color:#C4BEFF}
+  .sidebar-logo small{display:block;font-size:11px;color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif;margin-top:3px;font-weight:400}
+  .s-nav{padding:16px 0;flex:1}
+  .s-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 20px;background:none;border:none;color:rgba(255,255,255,0.6);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.15s;text-align:left}
+  .s-btn:hover{background:rgba(255,255,255,0.08);color:white}
+  .s-btn.active{background:rgba(255,255,255,0.15);color:white}
+  .s-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  .s-sec{font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;padding:16px 20px 6px;font-weight:500}
+  .s-bottom{padding:16px 20px;border-top:1px solid rgba(255,255,255,0.1)}
+  .s-user{font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:10px;line-height:1.5}
+  .s-logout{width:100%;padding:9px;background:rgba(255,255,255,0.1);border:none;border-radius:8px;color:white;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer}
+  .s-logout:hover{background:rgba(255,255,255,0.2)}
+  /* Desktop topbar hidden - sidebar handles nav */
+  .topbar .tb-actions{display:none}
+  /* Desktop content padding */
+  .content{padding:28px !important;padding-bottom:32px !important;max-width:960px;margin:0 auto}
+  /* Desktop modal centered */
+  .modal-bg{align-items:center;justify-content:center}
+  .modal-box{border-radius:20px;max-width:520px;max-height:85vh}
+  /* Desktop stats 4 cols */
+  #sc-home .stats{grid-template-columns:repeat(4,1fr) !important}
+  #pron-stats{grid-template-columns:repeat(4,1fr) !important}
+  .fg-2{grid-template-columns:1fr 1fr !important}
+  /* Desktop grid */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .doc-grid{grid-template-columns:repeat(3,1fr) !important}
+}
+@media(min-width:769px){
+  #app-screen.active-desktop{display:flex}
+}
+
+/* ── PREMIUM UX IMPROVEMENTS ── */
+.sess-tipo-btn:hover{opacity:0.85;transform:translateY(-1px)}
+.doc-card{transition:all 0.15s}
+.doc-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(83,74,183,0.15)}
+.stat{transition:all 0.15s;cursor:default}
+.stat:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(83,74,183,0.1)}
+/* Session type color variants */
+.sess-card.presencial{border-left-color:var(--pp);background:white}
+.sess-card.familiar{border-left-color:var(--gr);background:white}
+.sess-card.online{border-left-color:var(--bl);background:white}
+.sess-ia{background:var(--sf);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--mt);line-height:1.6}
+/* Better empty states */
+.empty-state{padding:28px 16px;text-align:center;color:var(--mt)}
+.empty-icon{font-size:36px;display:block;margin-bottom:10px;opacity:0.7}
+.empty-text{font-size:14px;line-height:1.5}
+/* Quick action buttons on dashboard */
+button:focus{outline:2px solid var(--pp);outline-offset:2px}
+/* Better transcription area */
+#transcr-live{font-size:14px;line-height:1.8;color:var(--tx);max-height:200px;overflow-y:auto;background:white;border-radius:10px;padding:14px;border:1px solid var(--bd)}
+/* IA result prettier */
+.ia-result{border-radius:14px;font-size:14px;line-height:1.8}
+/* Tabs premium */
+.tab{font-size:13px;font-weight:500}
+.tab.active{font-weight:600}
+/* Better badges */
+.badge{letter-spacing:0.2px}
+/* Recording pulse animation */
+#rec-pulse{animation:pulse-rec 0.8s ease-in-out infinite}
+@keyframes pulse-rec{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:0.6}}
+/* Loading dots */
+.ia-loading{gap:6px}
+/* Better topbar on mobile */
+@media(max-width:768px){
+  .topbar{padding:14px 16px 12px}
+  .content{padding:14px !important;padding-bottom:80px !important}
+  .modal-box{border-radius:20px 20px 0 0}
+  .stats{grid-template-columns:1fr 1fr !important}
+  #pron-stats{grid-template-columns:1fr 1fr !important}
+  .fg-2{grid-template-columns:1fr !important}
+  .doc-grid{grid-template-columns:1fr 1fr !important}
+  * {-webkit-text-size-adjust:100%}
+  input,select,textarea{font-size:16px !important} /* prevent zoom on iOS */
+}
+
+</style>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login-screen">
+  <div class="lw">
+    <div class="lb">
+      <div class="logo-c">
+        <div class="logo-img">
+          <img src="/icon-512.png" alt="PsiOn" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="logo-fallback" style="display:none">
+            <svg width="44" height="44" viewBox="0 0 100 100" fill="none">
+              <rect x="44" y="8" width="12" height="84" rx="5" fill="white"/>
+              <rect x="18" y="54" width="64" height="13" rx="5" fill="white"/>
+              <path d="M30 54 Q18 54 18 36 Q18 18 44 18" stroke="white" stroke-width="13" fill="none" stroke-linecap="round"/>
+              <path d="M70 54 Q82 54 82 36 Q82 18 56 18" stroke="white" stroke-width="13" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="logo-t">Psi<span>On</span></div>
+        <div class="logo-s">Prontuário Inteligente para Psicólogos</div>
+      </div>
+      <div class="lh">Bem-vinda de volta</div>
+      <div class="ls">Entre na sua conta para continuar</div>
+      <div class="lerr" id="l-err"><span id="l-msg"></span></div>
+      <div class="lf"><label class="ll">E-mail</label><input class="li" id="l-email" type="email" placeholder="seu@email.com" autocomplete="email" inputmode="email"></div>
+      <div class="lf"><label class="ll">Senha</label><input class="li" id="l-senha" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="lbtn" id="l-btn" onclick="doLogin()">Entrar no PsiOn</button>
+      <div class="ldiv">ou</div>
+      <button class="lbtn2" onclick="doDemo()">Acessar demonstração</button>
+      <div class="llgpd">Dados protegidos · LGPD · CFP</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app-screen">
+
+<!-- DESKTOP SIDEBAR -->
+<div class="sidebar" id="sidebar" style="display:none">
+  <div class="sidebar-logo">Psi<span>On</span><small>Prontuário Inteligente</small></div>
+  <nav class="s-nav">
+    <div class="s-sec">Principal</div>
+    <button class="s-btn active" onclick="goSc('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>Dashboard</button>
+    <button class="s-btn" onclick="goSc('pacientes')"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Pacientes</button>
+    <button class="s-btn" onclick="goSc('sessao')"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Nova Sessão</button>
+    <div class="s-sec">Clínico</div>
+    <button class="s-btn" onclick="goSc('agenda')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Agenda</button>
+    <button class="s-btn" onclick="goSc('financeiro')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Financeiro</button>
+    <button class="s-btn" onclick="goSc('documentos')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Documentos</button>
+    <button class="s-btn" onclick="goSc('ia-painel')"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3.5-2.5 6.5-6 7v2H9v-2c-3.5-.5-6-3.5-6-7a7 7 0 017-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>Painel IA</button>
+  </nav>
+  <div class="s-bottom">
+    <div class="s-user" id="s-user-info">Carregando...</div>
+    <button class="s-btn" onclick="goSc('config')" style="margin-bottom:8px;padding:9px 12px;background:rgba(255,255,255,0.08);border-radius:8px;width:100%"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Configurações</button>
+    <button class="s-logout" onclick="fazerLogout()">⎋ Sair da conta</button>
+  </div>
+</div>
+
+<!-- MAIN AREA -->
+<div class="main-area" id="main-area">
+
+<!-- DASHBOARD -->
+<div id="sc-home" class="screen active">
+  <div class="topbar">
+    <div class="tb-row">
+      <div><div class="tb-logo">Psi<span>On</span></div><div class="tb-sub" id="h-greeting">Bom dia!</div></div>
+      <div class="tb-actions">
+        <button class="tb-btn" onclick="openM('m-consulta')" title="Nova consulta">＋</button>
+        <button class="tb-btn" onclick="goSc('cadastro')" title="Novo paciente">👤</button>
+        <button onclick="goSc('config')" style="background:rgba(255,255,255,0.15);border:none;border-radius:10px;padding:7px 12px;color:white;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px">⚙️ Config</button>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <!-- STATS EXECUTIVAS -->
+    <div class="stats" style="margin-bottom:16px">
+      <div class="stat" style="border-left:3px solid var(--pp)"><div style="display:flex;align-items:center;justify-content:space-between"><div class="stat-ico" style="margin-bottom:6px">👥</div><div style="font-size:10px;color:var(--pp);font-weight:600;background:var(--pp-l);padding:3px 8px;border-radius:20px">ATIVOS</div></div><div class="stat-val" id="s-pac">0</div><div class="stat-lbl">Pacientes</div></div>
+      <div class="stat" style="border-left:3px solid #3b82f6"><div style="display:flex;align-items:center;justify-content:space-between"><div class="stat-ico" style="margin-bottom:6px">📅</div><div style="font-size:10px;color:#3b82f6;font-weight:600;background:#eff6ff;padding:3px 8px;border-radius:20px">HOJE</div></div><div class="stat-val" id="s-hoje">0</div><div class="stat-lbl">Consultas</div></div>
+      <div class="stat" style="border-left:3px solid var(--gr)"><div style="display:flex;align-items:center;justify-content:space-between"><div class="stat-ico" style="margin-bottom:6px">🎙️</div><div style="font-size:10px;color:var(--gr);font-weight:600;background:var(--gr-l);padding:3px 8px;border-radius:20px">TOTAL</div></div><div class="stat-val" id="s-sess">0</div><div class="stat-lbl">Sessões</div></div>
+      <div class="stat" style="border-left:3px solid var(--am)"><div style="display:flex;align-items:center;justify-content:space-between"><div class="stat-ico" style="margin-bottom:6px">💰</div><div style="font-size:10px;color:var(--am);font-weight:600;background:var(--am-l);padding:3px 8px;border-radius:20px">MÊS</div></div><div class="stat-val" id="s-mes">R$0</div><div class="stat-lbl">Receita</div></div>
+    </div>
+
+    <!-- ACESSO RÁPIDO SESSÃO -->
+    <div class="card" style="background:linear-gradient(135deg,#1a1a2e 0%,#2D2580 100%);border:none;margin-bottom:14px">
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Nova sessão</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <button onclick="iniciarSessaoRapida('presencial')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 8px;color:white;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;transition:all 0.15s;text-align:center">
+          <div style="font-size:20px;margin-bottom:5px">🏥</div>Presencial
+        </button>
+        <button onclick="iniciarSessaoRapida('online')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 8px;color:white;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;transition:all 0.15s;text-align:center">
+          <div style="font-size:20px;margin-bottom:5px">💻</div>Online
+        </button>
+        <button onclick="iniciarSessaoRapida('familiar')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 8px;color:white;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;transition:all 0.15s;text-align:center">
+          <div style="font-size:20px;margin-bottom:5px">👨‍👩‍👧</div>Familiar
+        </button>
+      </div>
+    </div>
+
+    <!-- CONSULTAS DO DIA -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="sec-title" style="margin-bottom:0">📅 Agenda de hoje</div>
+        <button onclick="openM('m-consulta')" style="background:var(--pp-l);color:var(--pp);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agendar</button>
+      </div>
+      <div id="h-appts"><div class="empty-state"><span class="empty-icon">📅</span><span class="empty-text">Nenhuma consulta hoje</span></div></div>
+    </div>
+
+    <!-- SESSÕES RECENTES -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="sec-title" style="margin-bottom:0">🕐 Sessões recentes</div>
+        <button onclick="goSc('pacientes')" style="background:var(--sf);color:var(--mt);border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Ver tudo</button>
+      </div>
+      <div id="h-recent"><div class="empty-state"><span class="empty-icon">📋</span><span class="empty-text">Nenhuma sessão registrada</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PACIENTES -->
+<div id="sc-pacientes" class="screen">
+  <div class="topbar">
+    <div class="tb-row">
+      <div><div class="tb-logo">Psi<span>On</span></div><div class="tb-sub" id="pac-sub">Pacientes</div></div>
+      <div class="tb-actions"><button class="tb-btn" onclick="goSc('cadastro')">＋</button></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card" style="padding:12px 14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;background:var(--sf);border-radius:10px;padding:9px 12px">
+        <span style="color:var(--mt);font-size:18px">🔍</span>
+        <input id="pac-search" placeholder="Buscar paciente..." style="border:none;background:transparent;font-size:14px;flex:1;color:var(--tx);font-family:'DM Sans',sans-serif;outline:none" oninput="renderPacs()">
+      </div>
+    </div>
+    <div id="pac-lista"></div>
+  </div>
+</div>
+
+<!-- PRONTUÁRIO -->
+<div id="sc-prontuario" class="screen">
+  <div class="topbar">
+    <div class="tb-row">
+      <div><div class="tb-logo">Psi<span>On</span></div><div class="tb-sub" id="pron-sub">Prontuário</div></div>
+      <div class="tb-actions">
+        <button class="tb-btn" onclick="goSc('sessao')" title="Nova sessão">✏️</button>
+        <button class="tb-btn" onclick="goSc('documentos')" title="Documentos">📄</button>
+        <button class="tb-btn" onclick="abrirIAPaciente()" title="Análise IA">🤖</button>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <button class="btn btn-ol btn-sm" onclick="goSc('pacientes')" style="margin-bottom:14px">← Pacientes</button>
+    <div id="pron-header"></div>
+
+    <!-- Stats paciente -->
+    <div class="stats" id="pron-stats" style="margin-bottom:14px"></div>
+
+    <!-- 360° IA SUMMARY - DESTAQUE PREMIUM -->
+    <div id="pron-ia-card" style="display:none;margin-bottom:14px">
+      <div style="background:linear-gradient(135deg,#1a1a2e 0%,#2D2580 60%,#534AB7 100%);border-radius:20px;padding:22px;position:relative;overflow:hidden">
+        <!-- decorative circles -->
+        <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04)"></div>
+        <div style="position:absolute;bottom:-20px;left:20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.03)"></div>
+        <!-- header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px">🤖</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:white">Visão 360° Clínica</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:1px">Análise completa gerada por IA</div>
+            </div>
+          </div>
+          <button onclick="gerarResumoProntuario()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:7px 13px;color:white;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px">↻ Atualizar</button>
+        </div>
+        <!-- loading -->
+        <div id="pron-ia-loading" style="display:none;color:rgba(255,255,255,0.7);font-size:13px;padding:8px 0;align-items:center">
+          <div class="dot" style="background:rgba(255,255,255,0.7)"></div>
+          <div class="dot" style="background:rgba(255,255,255,0.7)"></div>
+          <div class="dot" style="background:rgba(255,255,255,0.7)"></div>
+          <span style="margin-left:10px">Analisando histórico completo...</span>
+        </div>
+        <!-- result -->
+        <div id="pron-ia-resumo" style="display:none;font-size:13px;color:rgba(255,255,255,0.88);line-height:1.8;white-space:pre-wrap;position:relative"></div>
+        <!-- hint -->
+        <div id="pron-ia-hint" style="background:rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;font-size:13px;color:rgba(255,255,255,0.55);line-height:1.6">
+          IA analisando todo o histórico do paciente... <span style="color:rgba(255,255,255,0.3)">Aparece automaticamente após salvar a primeira sessão.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('presencial',this)">🏥 Presencial</button>
+      <button class="tab" onclick="switchTab('familiar',this)">👨‍👩‍👧 Familiar</button>
+      <button class="tab" onclick="switchTab('online',this)">💻 Online</button>
+    </div>
+
+    <div id="tab-presencial">
+      <button class="btn btn-pp btn-full" onclick="initSessao('presencial')">+ Nova sessão presencial</button>
+      <div id="sess-presencial"></div>
+    </div>
+    <div id="tab-familiar" style="display:none">
+      <button class="btn btn-gr btn-full" onclick="initSessao('familiar')">+ Nova reunião familiar</button>
+      <div id="sess-familiar"></div>
+    </div>
+    <div id="tab-online" style="display:none">
+      <button class="btn btn-bl btn-full" onclick="initSessao('online')">+ Nova sessão online</button>
+      <div id="sess-online"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NOVA SESSÃO -->
+<div id="sc-sessao" class="screen">
+  <div class="topbar">
+    <div class="tb-row">
+      <div><div class="tb-logo">Psi<span>On</span></div><div class="tb-sub" id="sess-sub">Nova Sessão</div></div>
+    </div>
+  </div>
+  <div class="content">
+    <button class="btn btn-ol btn-sm" id="sess-back-btn" onclick="goSc('prontuario')" style="margin-bottom:14px">← Voltar</button>
+
+    <!-- Tipo e paciente -->
+    <div class="card">
+      <div class="fg"><label class="fl">Paciente</label><select class="fi" id="sess-pac-sel"></select></div>
+      <div class="fg">
+        <label class="fl">Tipo de sessão</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">
+          <button type="button" class="sess-tipo-btn active" data-tipo="presencial" onclick="selectTipo('presencial',this)" style="background:var(--pp-l);border:2px solid var(--pp);border-radius:12px;padding:12px 6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--pp);text-align:center;transition:all 0.15s">
+            <div style="font-size:20px;margin-bottom:4px">🏥</div>Presencial
+          </button>
+          <button type="button" class="sess-tipo-btn" data-tipo="online" onclick="selectTipo('online',this)" style="background:var(--sf);border:2px solid var(--bd);border-radius:12px;padding:12px 6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--mt);text-align:center;transition:all 0.15s">
+            <div style="font-size:20px;margin-bottom:4px">💻</div>Online
+          </button>
+          <button type="button" class="sess-tipo-btn" data-tipo="familiar" onclick="selectTipo('familiar',this)" style="background:var(--sf);border:2px solid var(--bd);border-radius:12px;padding:12px 6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--mt);text-align:center;transition:all 0.15s">
+            <div style="font-size:20px;margin-bottom:4px">👨‍👩‍👧</div>Familiar
+          </button>
+        </div>
+        <select class="fi" id="sess-tipo" style="display:none"><option value="presencial">presencial</option><option value="familiar">familiar</option><option value="online">online</option></select>
+      </div>
+    </div>
+
+    <!-- Gravação -->
+    <div class="rec-card">
+      <div class="rec-title">🎙️ Gravação da sessão</div>
+      <div class="rec-sub">Grave → transcreve ao vivo → IA gera o prontuário</div>
+      <div class="rec-controls">
+        <div class="rec-timer" id="rec-timer">00:00</div>
+        <div class="rec-pulse" id="rec-pulse"></div>
+        <button class="btn btn-pp btn-sm" id="rec-btn" onclick="toggleRec()">▶ Iniciar gravação</button>
+        <button class="btn btn-sm" id="transcr-clear-btn" style="display:none;background:var(--red-l);color:var(--red)" onclick="limparTranscricao()">🗑 Limpar</button>
+      </div>
+      <div class="rec-status" id="rec-status"></div>
+      <div class="transcr-live" id="transcr-live"></div>
+    </div>
+
+    <!-- Anotações -->
+    <div class="card">
+      <div class="card-title">Anotações manuais</div>
+      <textarea class="fi" id="sess-txt" placeholder="Complementos, observações clínicas, tarefas definidas..."></textarea>
+    </div>
+
+    <!-- Botões IA -->
+    <div class="card">
+      <div class="card-title">Gerar com IA</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <button class="btn btn-pp btn-sm" onclick="gerarIA('resumo')">📋 Resumo clínico</button>
+        <button class="btn btn-sm" style="background:#6B5FCC;color:white" onclick="gerarIA('sugestao')">💡 Sugestão terapêutica</button>
+        <button class="btn btn-sm" style="background:var(--gr);color:white" onclick="gerarIA('plano')">🏥 Para plano de saúde</button>
+        <button class="btn btn-sm" style="background:var(--am);color:white" onclick="gerarIA('atestado')">📜 Atestado</button>
+      </div>
+      <div class="ia-loading" id="sess-ld"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:8px">Analisando com IA...</span></div>
+      <div class="ia-result" id="sess-res"></div>
+      <div id="sess-acts" style="display:none;margin-top:12px;gap:8px;display:none">
+        <button class="btn btn-gr btn-sm" onclick="salvarSessaoComIA()">💾 Salvar no prontuário</button>
+        <button class="btn btn-ol btn-sm" onclick="copiarIA()">📋 Copiar</button>
+      </div>
+    </div>
+
+    <button class="btn btn-pp btn-full" onclick="salvarSessao()">💾 Salvar sessão</button>
+  </div>
+</div>
+
+<!-- CENTRAL DE DOCUMENTOS -->
+<div id="sc-documentos" class="screen">
+  <div class="topbar">
+    <div class="tb-row">
+      <div><div class="tb-logo">Psi<span>On</span></div><div class="tb-sub" id="doc-sub">Central de Documentos</div></div>
+    </div>
+  </div>
+  <div class="content">
+    <!-- Paciente selecionado -->
+    <div class="card" style="padding:14px 16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:20px">👤</div>
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Paciente</div>
+          <select class="fi" id="doc-pac-sel" style="border:none;background:transparent;padding:0;font-size:15px;font-weight:500;color:var(--tx);width:100%"></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÃO PRINCIPAL -->
+    <button onclick="openModalDocs()" class="btn btn-pp btn-full" style="padding:18px;font-size:16px;border-radius:16px;margin-bottom:16px;box-shadow:0 6px 24px rgba(83,74,183,0.35)">
+      <span style="font-size:20px">📄</span> Gerar Documento com IA
+    </button>
+
+    <!-- FAVORITOS -->
+    <div id="doc-favoritos-section" style="display:none;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">⭐ Meus favoritos</div>
+      <div id="doc-favoritos-lista"></div>
+    </div>
+
+    <!-- MAIS UTILIZADOS -->
+    <div id="doc-mais-usados-section" style="display:none;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">🔥 Mais utilizados</div>
+      <div id="doc-mais-usados-lista"></div>
+    </div>
+
+    <!-- ÚLTIMOS GERADOS -->
+    <div class="card" id="doc-historico-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="sec-title" style="margin-bottom:0">📂 Últimos documentos</div>
+        <span style="font-size:12px;color:var(--mt)" id="doc-hist-count"></span>
+      </div>
+      <div id="doc-historico-lista"><div class="empty-state"><span class="empty-icon">📄</span><span class="empty-text">Nenhum documento gerado ainda.<br>Clique em "Gerar Documento com IA".</span></div></div>
+    </div>
+
+    <!-- RESULTADO -->
+    <div class="card" id="doc-result-card" style="display:none;margin-top:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div class="sec-title" style="margin-bottom:2px" id="doc-result-title">Documento gerado</div>
+          <div style="font-size:12px;color:var(--mt)" id="doc-result-meta"></div>
+        </div>
+        <button onclick="document.getElementById('doc-result-card').style.display='none'" style="background:var(--sf);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+      <div class="ia-loading" id="doc-ld" style="display:flex"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:8px">Gerando com IA...</span></div>
+      <div class="ia-result" id="doc-res"></div>
+      <div id="doc-acts" style="display:none;margin-top:14px;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-pp btn-sm" onclick="copiarDoc()">📋 Copiar</button>
+        <button class="btn btn-gr btn-sm" onclick="exportarPDF()">📥 Baixar PDF</button>
+        <button class="btn btn-ol btn-sm" onclick="salvarDocHistorico()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DOCUMENTOS -->
+<div class="modal-bg" id="m-documentos">
+  <div class="modal-box" style="max-height:92vh;border-radius:24px 24px 0 0;padding:20px 20px 32px">
+    <!-- Search -->
+    <div style="display:flex;align-items:center;gap:10px;background:var(--sf);border-radius:12px;padding:11px 14px;margin-bottom:16px;border:1.5px solid var(--bd)">
+      <span style="font-size:18px;color:var(--mt)">🔍</span>
+      <input id="doc-search-input" placeholder="Pesquisar documento..." style="border:none;background:transparent;font-size:15px;flex:1;color:var(--tx);font-family:'DM Sans',sans-serif;outline:none" oninput="filtrarDocs(this.value)" autofocus>
+      <button onclick="closeM('m-documentos')" style="background:none;border:none;color:var(--mt);cursor:pointer;font-size:20px;line-height:1">✕</button>
+    </div>
+    <div id="doc-modal-lista" style="overflow-y:auto;max-height:60vh"></div>
+  </div>
+</div>
+
+<!-- AGENDA -->
+<div id="sc-agenda" class="screen">
+  <div class="topbar">
+    <div class="tb-row">
+      <div><div class="tb-logo">Psi<span>On</span></div><div class="tb-sub" id="agenda-sub">Agenda</div></div>
+      <div class="tb-actions">
+        <button class="tb-btn" onclick="mudaMes(-1)">‹</button>
+        <button class="tb-btn" onclick="mudaMes(1)">›</button>
+        <button class="tb-btn" onclick="openM('m-consulta')">＋</button>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="sec-title" id="cal-titulo"></div>
+      <div class="cal-grid" id="cal-labels"></div>
+      <div class="cal-grid" id="cal-days" style="margin-top:4px"></div>
+    </div>
+    <div class="card" id="agenda-day-card" style="display:none">
+      <div class="sec-title" id="agenda-day-title"></div>
+      <div id="agenda-day-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FINANCEIRO -->
+<div id="sc-financeiro" class="screen">
+  <div class="topbar">
+    <div class="tb-row">
+      <div><div class="tb-logo">Psi<span>On</span></div><div class="tb-sub">Financeiro</div></div>
+      <div class="tb-actions"><button class="tb-btn" onclick="openM('m-pagamento')">＋</button></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="fin-banner">
+      <div style="font-size:12px;color:rgba(255,255,255,0.7)">Recebido este mês</div>
+      <div class="fin-total" id="fin-total">R$0</div>
+      <div class="fin-row">
+        <div class="fin-mini"><label>A receber</label><div id="fin-pend">R$0</div></div>
+        <div class="fin-mini"><label>Sessões pagas</label><div id="fin-count">0</div></div>
+        <div class="fin-mini"><label>Ticket médio</label><div id="fin-ticket">R$0</div></div>
+      </div>
+    </div>
+    <div class="card"><div class="sec-title">Movimentações</div><div id="fin-lista"></div></div>
+    <div class="card"><div class="sec-title">Pendências</div><div id="fin-pend-lista"></div></div>
+  </div>
+</div>
+
+<!-- CADASTRO -->
+<div id="sc-cadastro" class="screen">
+  <div class="topbar"><div class="tb-logo">Psi<span>On</span></div><div class="tb-sub">Novo Paciente</div></div>
+  <div class="content">
+    <button class="btn btn-ol btn-sm" onclick="goSc('pacientes')" style="margin-bottom:14px">← Voltar</button>
+    <div class="card">
+      <div class="card-title">Dados pessoais</div>
+      <div class="fg"><label class="fl">Nome completo *</label><input class="fi" id="c-nome" placeholder="Nome do paciente"></div>
+      <div class="fg-2">
+        <div class="fg"><label class="fl">Data de nascimento</label><input class="fi" id="c-nasc" type="date"></div>
+        <div class="fg"><label class="fl">Telefone</label><input class="fi" id="c-tel" type="tel" placeholder="(48) 99999-9999"></div>
+      </div>
+      <div class="fg"><label class="fl">E-mail</label><input class="fi" id="c-email" type="email" placeholder="email@exemplo.com"></div>
+      <div class="fg"><label class="fl">Responsável (se menor)</label><input class="fi" id="c-resp" placeholder="Nome do responsável"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Dados clínicos</div>
+      <div class="fg-2">
+        <div class="fg"><label class="fl">Abordagem</label><select class="fi" id="c-ab"><option value="">Selecionar</option><option>TCC</option><option>Psicanálise</option><option>Gestalt</option><option>Humanista</option><option>Sistêmica</option><option>Terapia de Casal</option><option>DBT</option><option>ACT</option><option>Outra</option></select></div>
+        <div class="fg"><label class="fl">Tipo</label><select class="fi" id="c-tipo"><option>Presencial</option><option>Online</option><option>Híbrido</option></select></div>
+      </div>
+      <div class="fg-2">
+        <div class="fg"><label class="fl">Valor (R$)</label><input class="fi" id="c-val" type="number" placeholder="150"></div>
+        <div class="fg"><label class="fl">Pagamento</label><select class="fi" id="c-pag"><option>PIX</option><option>Dinheiro</option><option>Cartão</option><option>Plano de saúde</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">Diagnósticos / CID</label><input class="fi" id="c-cid" placeholder="Ex: F41.1 - Transtorno de ansiedade"></div>
+      <div class="fg"><label class="fl">Observações clínicas</label><textarea class="fi" id="c-obs" placeholder="Histórico, queixa principal, objetivos..."></textarea></div>
+    </div>
+    <div style="background:var(--pp-l);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
+      <input type="checkbox" id="c-lgpd" style="margin-top:3px;accent-color:var(--pp);width:18px;height:18px;flex-shrink:0">
+      <label for="c-lgpd" style="font-size:13px;color:var(--pp-d);line-height:1.5;cursor:pointer">Paciente autorizou armazenamento de dados conforme <strong>LGPD</strong> e normas do <strong>CFP</strong>.</label>
+    </div>
+    <button class="btn btn-pp btn-full" onclick="salvarPac()">💾 Salvar paciente</button>
+  </div>
+</div>
+
+
+<!-- PAINEL IA -->
+<div id="sc-ia-painel" class="screen">
+  <div class="topbar">
+    <div class="tb-row">
+      <div><div class="tb-logo">Psi<span>On</span></div><div class="tb-sub">Painel de Inteligência Clínica</div></div>
+    </div>
+  </div>
+  <div class="content">
+    <!-- Seletor de paciente -->
+    <div class="card">
+      <div class="card-title">Analisar paciente</div>
+      <select class="fi" id="ia-pac-sel" onchange="renderIAPainel()"></select>
+    </div>
+
+    <!-- Resumo clínico geral -->
+    <div class="card" id="ia-resumo-card" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="sec-title" style="margin-bottom:0">🤖 Resumo Clínico Geral</div>
+        <button class="btn btn-pp btn-sm" onclick="gerarResumoPac()">Gerar com IA</button>
+      </div>
+      <div class="ia-loading" id="ia-resumo-ld"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:8px">Analisando histórico completo...</span></div>
+      <div class="ia-result" id="ia-resumo-res"></div>
+      <div id="ia-resumo-hint" style="font-size:13px;color:var(--mt);line-height:1.6">Clique em "Gerar com IA" para analisar todo o histórico do paciente e obter um resumo clínico completo com evolução, temas recorrentes e observações.</div>
+    </div>
+
+    <!-- Stats do paciente -->
+    <div id="ia-stats-card" style="display:none">
+      <div class="stats" id="ia-stats"></div>
+    </div>
+
+    <!-- Linha do tempo -->
+    <div class="card" id="ia-timeline-card" style="display:none">
+      <div class="sec-title">📈 Linha do tempo terapêutica</div>
+      <div id="ia-timeline"></div>
+    </div>
+
+    <!-- Temas recorrentes -->
+    <div class="card" id="ia-temas-card" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="sec-title" style="margin-bottom:0">🔍 Temas e Evolução</div>
+        <button class="btn btn-ol btn-sm" onclick="gerarTemas()">Analisar</button>
+      </div>
+      <div class="ia-loading" id="ia-temas-ld"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:8px">Identificando padrões...</span></div>
+      <div class="ia-result" id="ia-temas-res"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- CONFIGURAÇÕES -->
+<div id="sc-config" class="screen">
+  <div class="topbar">
+    <div class="tb-row">
+      <div><div class="tb-logo">Psi<span>On</span></div><div class="tb-sub">Configurações</div></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="card-title">Perfil profissional</div>
+      <div class="fg"><label class="fl">Nome profissional</label><input class="fi" id="cfg-nome" placeholder="Dra. Maria Silva"></div>
+      <div class="fg-2">
+        <div class="fg"><label class="fl">CRP</label><input class="fi" id="cfg-crp" placeholder="12/00000"></div>
+        <div class="fg"><label class="fl">Especialidade</label><input class="fi" id="cfg-esp" placeholder="Psicóloga Clínica"></div>
+      </div>
+      <div class="fg"><label class="fl">Nome da clínica</label><input class="fi" id="cfg-clinica" placeholder="Clínica PsiOn"></div>
+      <div class="fg"><label class="fl">Endereço</label><input class="fi" id="cfg-end" placeholder="Rua das Flores, 123 - Florianópolis, SC"></div>
+      <div class="fg-2">
+        <div class="fg"><label class="fl">Telefone</label><input class="fi" id="cfg-tel" placeholder="(48) 99999-9999"></div>
+        <div class="fg"><label class="fl">E-mail profissional</label><input class="fi" id="cfg-email" type="email" placeholder="contato@clinica.com.br"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Assinatura nos documentos</div>
+      <div style="background:var(--sf);border-radius:12px;padding:16px;margin-bottom:14px;font-size:13px;color:var(--mt);line-height:1.6" id="cfg-preview">
+        <div style="font-weight:600;color:var(--tx)" id="prev-nome">Dra. Psicóloga</div>
+        <div id="prev-crp">CRP 12/00000</div>
+        <div id="prev-esp">Psicóloga Clínica</div>
+        <div id="prev-clinica"></div>
+        <div id="prev-tel"></div>
+      </div>
+      <div class="fg"><label class="fl">Valor padrão da sessão (R$)</label><input class="fi" id="cfg-valor" type="number" placeholder="150"></div>
+      <div class="fg"><label class="fl">Abordagem principal</label>
+        <select class="fi" id="cfg-abordagem">
+          <option value="">Selecionar</option>
+          <option>TCC</option><option>Psicanálise</option><option>Gestalt</option>
+          <option>Humanista</option><option>Sistêmica</option><option>DBT</option><option>ACT</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Preferências</div>
+      <div class="fg"><label class="fl">Duração padrão da sessão</label>
+        <select class="fi" id="cfg-duracao"><option>50 min</option><option>60 min</option><option>80 min</option><option>90 min</option></select>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f3f3f3">
+        <div><div style="font-size:14px;font-weight:500">Transcrição automática</div><div style="font-size:12px;color:var(--mt)">Ativar ao iniciar gravação</div></div>
+        <input type="checkbox" id="cfg-transcr" checked style="accent-color:var(--pp);width:20px;height:20px">
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0">
+        <div><div style="font-size:14px;font-weight:500">Resumo IA automático</div><div style="font-size:12px;color:var(--mt)">Gerar após salvar sessão</div></div>
+        <input type="checkbox" id="cfg-ia-auto" style="accent-color:var(--pp);width:20px;height:20px">
+      </div>
+    </div>
+
+    <button class="btn btn-pp btn-full" onclick="salvarConfig()">💾 Salvar configurações</button>
+    <button class="btn btn-red btn-full" onclick="fazerLogout()" style="margin-top:4px">⎋ Sair da conta</button>
+  </div>
+</div>
+
+</div><!-- main-area -->
+</div><!-- app-screen -->
+
+<!-- NAV -->
+<div class="bot-nav" id="bot-nav" style="display:none">
+  <button class="nb active" onclick="goSc('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>Início</button>
+  <button class="nb" onclick="goSc('pacientes')"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Pacientes</button>
+  <button class="nb" onclick="goSc('sessao')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Sessão</button>
+  <button class="nb" onclick="goSc('agenda')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Agenda</button>
+  <button class="nb" onclick="goSc('financeiro')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Financeiro</button>
+  <button class="nb" onclick="goSc('ia-painel')"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3.5-2.5 6.5-6 7v2H9v-2c-3.5-.5-6-3.5-6-7a7 7 0 017-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>IA</button>
+</div>
+
+<!-- MODAL CONSULTA -->
+<div class="modal-bg" id="m-consulta">
+  <div class="modal-box">
+    <div class="modal-title">Nova Consulta</div>
+    <div class="fg"><label class="fl">Paciente</label><select class="fi" id="m-pac"></select></div>
+    <div class="fg-2">
+      <div class="fg"><label class="fl">Data</label><input class="fi" id="m-data" type="date"></div>
+      <div class="fg"><label class="fl">Horário</label><input class="fi" id="m-hora" type="time" value="09:00"></div>
+    </div>
+    <div class="fg"><label class="fl">Tipo</label><select class="fi" id="m-tipo"><option>Sessão individual</option><option>Avaliação inicial</option><option>Terapia casal</option><option>Reunião familiar</option><option>Online</option></select></div>
+    <div class="fg"><label class="fl">Status</label><select class="fi" id="m-status"><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option></select></div>
+    <div class="modal-btns"><button class="btn btn-ol" onclick="closeM('m-consulta')">Cancelar</button><button class="btn btn-pp" onclick="salvarConsulta()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL PAGAMENTO -->
+<div class="modal-bg" id="m-pagamento">
+  <div class="modal-box">
+    <div class="modal-title">Registrar Pagamento</div>
+    <div class="fg"><label class="fl">Paciente</label><select class="fi" id="mp-pac"></select></div>
+    <div class="fg-2">
+      <div class="fg"><label class="fl">Valor (R$)</label><input class="fi" id="mp-val" type="number" placeholder="150"></div>
+      <div class="fg"><label class="fl">Data</label><input class="fi" id="mp-data" type="date"></div>
+    </div>
+    <div class="fg-2">
+      <div class="fg"><label class="fl">Forma</label><select class="fi" id="mp-forma"><option>PIX</option><option>Dinheiro</option><option>Cartão</option><option>Plano de saúde</option></select></div>
+      <div class="fg"><label class="fl">Status</label><select class="fi" id="mp-status"><option value="pago">Pago</option><option value="pendente">Pendente</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Descrição</label><input class="fi" id="mp-desc" placeholder="Ex: Sessão 05/06"></div>
+    <div class="modal-btns"><button class="btn btn-ol" onclick="closeM('m-pagamento')">Cancelar</button><button class="btn btn-pp" onclick="salvarPag()">Salvar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════
+const S={
+  get(k){try{return JSON.parse(localStorage.getItem('psion_'+k)||'null')}catch{return null}},
+  set(k,v){try{localStorage.setItem('psion_'+k,JSON.stringify(v))}catch{}},
+  del(k){localStorage.removeItem('psion_'+k)}
+};
+
+// ═══════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════
+const SUPA_URL='https://ctxwjmwcswlelkuuqkjs.supabase.co';
+const SUPA_KEY='sb_publishable_CFWupJGyYSiqrVsvvm2E3w_xewuOZg2';
+let supa=null, useCloud=false, uid=null;
+
+function initSupa(){
+  try{
+    if(window.supabase&&!window._supaErr){
+      supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+      useCloud=true;
+    }
+  }catch{useCloud=false;}
+}
+
+async function sbGet(t){
+  if(!useCloud||!uid)return[];
+  try{const{data}=await supa.from(t).select('*').eq('usuario_id',uid).order('created_at',{ascending:false});return data||[];}catch{return[];}
+}
+async function sbIns(t,obj){
+  if(!useCloud||!uid)return null;
+  try{const{data}=await supa.from(t).insert({...obj,usuario_id:uid}).select();return data?.[0]||null;}catch{return null;}
+}
+async function sbUpd(t,id,obj){
+  if(!useCloud||!uid)return;
+  try{await supa.from(t).update(obj).eq('id',id).eq('usuario_id',uid);}catch{}
+}
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let pacs=[], cons=[], sess=[], pags=[];
+let pacAtual=null, sessAtual=null;
+let isRec=false, speechRec=null, finalTxt='', recInt=null, recSecs=0;
+let calMes=new Date().getMonth(), calAno=new Date().getFullYear();
+
+// ═══════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const senha=document.getElementById('l-senha').value;
+  const err=document.getElementById('l-err');
+  if(!email||!senha){err.style.display='block';document.getElementById('l-msg').textContent='Preencha e-mail e senha.';return;}
+  err.style.display='none';
+  const btn=document.getElementById('l-btn');
+  btn.textContent='Entrando...';btn.disabled=true;
+  try{
+    if(useCloud){
+      let{data,error}=await supa.auth.signInWithPassword({email,password:senha});
+      if(error){
+        const res=await supa.auth.signUp({email,password:senha});
+        if(res.error){err.style.display='block';document.getElementById('l-msg').textContent=res.error.message;btn.textContent='Entrar no PsiOn';btn.disabled=false;return;}
+        data=res.data;
+      }
+      uid=data.user.id;
+    }else{
+      uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
+    }
+    S.set('user',{email,nome:email.split('@')[0].replace(/[._]/g,' '),uid});
+    await entrarApp();
+  }catch(e){
+    uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
+    S.set('user',{email,nome:email.split('@')[0].replace(/[._]/g,' '),uid});
+    await entrarApp();
+  }
+  btn.textContent='Entrar no PsiOn';btn.disabled=false;
+}
+function doDemo(){document.getElementById('l-email').value='demo@psion.com.br';document.getElementById('l-senha').value='psion2025';doLogin();}
+async function entrarApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+  if(window.innerWidth<769){
+    document.getElementById('bot-nav').style.display='flex';
+  }
+  await loadData();
+  initApp();
+}
+async function fazerLogout(){
+  if(!confirm('Sair da conta?'))return;
+  if(useCloud&&supa)await supa.auth.signOut().catch(()=>{});
+  S.del('user');pacs=[];cons=[];sess=[];pags=[];uid=null;
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('bot-nav').style.display='none';
+  const sb=document.getElementById('sidebar');if(sb)sb.style.display='none';
+  document.getElementById('login-screen').style.display='block';
+  document.getElementById('l-email').value='';document.getElementById('l-senha').value='';
+}
+
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+async function loadData(){
+  if(useCloud&&uid&&!uid.startsWith('local_')){
+    const[p,c,s,pg]=await Promise.all([sbGet('pacientes'),sbGet('consultas'),sbGet('sessoes'),sbGet('pagamentos')]);
+    pacs=p.map(x=>({...x,val:x.valor,tipo:x.tipo_atendimento}));
+    cons=c.map(x=>({...x,pacId:x.paciente_id,pacNome:x.pac_nome}));
+    sess=s.map(x=>({...x,pacId:x.paciente_id,resumoIA:x.resumo_ia||'',tipoSessao:x.tipo_sessao||'presencial'}));
+    pags=pg.map(x=>({...x,pacId:x.paciente_id,pacNome:x.pac_nome,val:x.valor}));
+  }else{
+    pacs=S.get('pacs')||[];cons=S.get('cons')||[];sess=S.get('sess')||[];pags=S.get('pags')||[];
+    if(uid&&!uid.startsWith('local_')){
+      // Has cloud uid but no connection - show warning
+      console.log('Using local cache - cloud sync pending');
+    }
+  }
+}
+function saveLocal(){S.set('pacs',pacs);S.set('cons',cons);S.set('sess',sess);S.set('pags',pags);}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+function initApp(){
+  const user=S.get('user')||{};
+  const h=new Date().getHours();
+  const g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+  const nome=user.nome||'Dra.';
+  document.getElementById('h-greeting').textContent=g+', '+nome+'!';
+  // Show sidebar on desktop
+  if(window.innerWidth>=769){
+    const sidebar=document.getElementById('sidebar');
+    const mainArea=document.getElementById('main-area');
+    if(sidebar){sidebar.style.display='flex';}
+    // Update user info in sidebar
+    const userInfo=document.getElementById('s-user-info');
+    if(userInfo){userInfo.innerHTML='<strong style="color:white;font-size:13px">'+nome+'</strong><br>'+(user.email||'');}
+  }
+  renderHome();
+}
+
+// ═══════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════
+function goSc(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById('sc-'+name);
+  if(el)el.classList.add('active');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.s-btn').forEach(b=>b.classList.remove('active'));
+  // Activate sidebar button
+  const sMap={home:0,pacientes:1,sessao:2,documentos:3,ia_painel:3,agenda:4,financeiro:5,config:6};
+  const map={home:0,pacientes:1,prontuario:1,cadastro:1,sessao:2,documentos:2,agenda:3,financeiro:4,'ia-painel':5,config:5};
+  const idx=map[name];
+  if(idx!==undefined)document.querySelectorAll('.nb')[idx]?.classList.add('active');
+  window.scrollTo(0,0);
+  if(name==='home')renderHome();
+  if(name==='pacientes')renderPacs();
+  if(name==='prontuario'&&pacAtual)renderPron();
+  if(name==='agenda')renderCal();
+  if(name==='financeiro')renderFin();
+  if(name==='documentos')renderDocSel();
+  if(name==='sessao')initSessaoScreen();
+  if(name==='ia-painel')initIAPainel();
+  if(name==='config')initConfig();
+}
+
+// ═══════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════
+function renderHome(){
+  const hoje=new Date().toISOString().split('T')[0];
+  const cH=cons.filter(c=>c.data===hoje);
+  const mes=new Date().getMonth(),ano=new Date().getFullYear();
+  const pgMes=pags.filter(p=>{try{const d=new Date(p.data+'T12:00');return d.getMonth()===mes&&d.getFullYear()===ano&&p.status==='pago'}catch{return false}});
+  document.getElementById('s-pac').textContent=pacs.length;
+  document.getElementById('s-sess').textContent=sess.length;
+  document.getElementById('s-hoje').textContent=cH.length;
+  document.getElementById('s-mes').textContent='R$'+pgMes.reduce((a,p)=>a+(+p.val||0),0).toLocaleString('pt-BR');
+
+  const appts=document.getElementById('h-appts');
+  if(!cH.length){appts.innerHTML='<div class="empty-state"><span class="empty-icon">📅</span><span class="empty-text">Nenhuma consulta hoje</span></div>';}
+  else{appts.innerHTML=cH.sort((a,b)=>a.hora.localeCompare(b.hora)).map(c=>{
+    const pac=pacs.find(p=>p.id===c.pacId)||{nome:c.pacNome||'Paciente'};
+    return '<div class="appt-item"><div class="appt-time">'+c.hora+'</div><div style="flex:1"><div style="font-size:14px;font-weight:500">'+pac.nome+'</div><div style="font-size:12px;color:var(--mt)">'+(c.tipo||'Sessão')+'</div></div><span class="badge '+(c.status==='confirmado'?'b-ok':'b-wt')+'">'+(c.status==='confirmado'?'Confirmado':'Aguardando')+'</span></div>';
+  }).join('');}
+
+  const recent=document.getElementById('h-recent');
+  const recentSess=sess.slice(0,3);
+  if(!recentSess.length){recent.innerHTML='<div class="empty-state"><span class="empty-icon">📋</span><span class="empty-text">Nenhuma sessão registrada</span></div>';}
+  else{recent.innerHTML=recentSess.map(s=>{
+    const pac=pacs.find(p=>p.id===s.pacId)||{nome:'Paciente'};
+    return '<div class="pac-item" onclick="abrirPac(\''+s.pacId+'\')"><div class="av" style="width:38px;height:38px;font-size:12px">'+pac.nome.split(' ').filter(w=>w.length>1).slice(0,2).map(w=>w[0]).join('').toUpperCase()+'</div><div style="flex:1"><div style="font-size:14px;font-weight:500">'+pac.nome+'</div><div style="font-size:12px;color:var(--mt)">'+new Date(s.data+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})+'</div></div><span class="badge b-pp">'+s.tipoSessao+'</span></div>';
+  }).join('');}
+}
+
+// ═══════════════════════════════════════
+// PACIENTES
+// ═══════════════════════════════════════
+function renderPacs(){
+  const q=(document.getElementById('pac-search')?.value||'').toLowerCase();
+  const filtered=pacs.filter(p=>p.nome.toLowerCase().includes(q));
+  document.getElementById('pac-sub').textContent=pacs.length+' paciente'+(pacs.length!==1?'s':'');
+  const el=document.getElementById('pac-lista');
+  if(!filtered.length){el.innerHTML='<div class="card"><div class="empty-state"><span class="empty-icon">👥</span><span class="empty-text">'+(!pacs.length?'Nenhum paciente. Clique em + para cadastrar.':'Nenhum resultado')+'</span></div></div>';return;}
+  el.innerHTML=filtered.map(p=>{
+    const ini=p.nome.split(' ').filter(w=>w.length>1).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?';
+    const nS=sess.filter(s=>s.pacId===p.id).length;
+    const nasc=p.nascimento?new Date(p.nascimento+'T12:00'):'';
+    const idade=nasc?new Date().getFullYear()-nasc.getFullYear():'';
+    const ativo=p.status!=='inativo';
+    return '<div class="card" style="padding:14px 16px;margin-bottom:10px;opacity:'+(ativo?'1':'0.65')+'"><div class="pac-item" style="padding:0;border:none" onclick="abrirPac(\''+p.id+'\')"><div class="av">'+ini+'</div><div style="flex:1"><div class="pac-name">'+p.nome+'</div><div class="pac-meta">'+(idade?idade+' anos · ':'')+( p.abordagem||'—')+' · '+nS+' sessão'+(nS!==1?'ões':'')+'</div></div><div style="color:var(--pp);font-size:20px">›</div></div></div>';
+  }).join('');
+}
+function abrirPac(id){
+  pacAtual=pacs.find(p=>p.id===id)||null;
+  if(pacAtual)goSc('prontuario');
+}
+
+// ═══════════════════════════════════════
+// PRONTUÁRIO COM 3 ABAS
+// ═══════════════════════════════════════
+function renderPron(){
+  if(!pacAtual)return;
+  const p=pacAtual;
+  // Auto-trigger IA summary if sessions exist and no summary shown
+  const pacSess=sess.filter(s=>s.pacId===p.id);
+  if(pacSess.length>0){
+    setTimeout(()=>{
+      const resumoEl=document.getElementById('pron-ia-resumo');
+      if(resumoEl&&resumoEl.style.display==='none'){
+        gerarResumoProntuario();
+      }
+    },500);
+  }
+  document.getElementById('pron-sub').textContent=p.nome;
+  const ini=p.nome.split(' ').filter(w=>w.length>1).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const nS=sess.filter(s=>s.pacId===p.id&&s.tipoSessao==='presencial').length;
+  const nF=sess.filter(s=>s.pacId===p.id&&s.tipoSessao==='familiar').length;
+  const nO=sess.filter(s=>s.pacId===p.id&&s.tipoSessao==='online').length;
+  const nTotal=nS+nF+nO;
+  const pago=pags.filter(pg=>pg.pacId===p.id&&pg.status==='pago').reduce((a,pg)=>a+(+pg.val||0),0);
+  const nasc=p.nascimento?new Date(p.nascimento+'T12:00'):'';
+  const idade=nasc?new Date().getFullYear()-nasc.getFullYear():'';
+
+  document.getElementById('pron-header').innerHTML='<div class="pron-header"><div class="pron-av">'+ini+'</div><div style="flex:1"><div style="font-size:17px;font-weight:600">'+p.nome+'</div><div style="font-size:13px;color:var(--mt);margin-top:2px">'+(idade?idade+' anos · ':'')+( p.abordagem||'—')+'</div>'+(p.cid?'<div style="font-size:12px;color:var(--mt);margin-top:2px">CID: '+p.cid+'</div>':'')+'</div></div>';
+
+  document.getElementById('pron-ia-card').style.display=pacSess.length>0?'block':'none';
+  document.getElementById('pron-stats').innerHTML='<div class="stat"><div class="stat-ico">🏥</div><div class="stat-val">'+nS+'</div><div class="stat-lbl">Presenciais</div></div><div class="stat"><div class="stat-ico">👨‍👩‍👧</div><div class="stat-val">'+nF+'</div><div class="stat-lbl">Familiares</div></div><div class="stat"><div class="stat-ico">💻</div><div class="stat-val">'+nO+'</div><div class="stat-lbl">Online</div></div><div class="stat"><div class="stat-ico">💰</div><div class="stat-val">R$'+pago+'</div><div class="stat-lbl">Total pago</div></div>';
+
+  renderSessoesPor('presencial');
+  renderSessoesPor('familiar');
+  renderSessoesPor('online');
+}
+
+function renderSessoesPor(tipo){
+  const el=document.getElementById('sess-'+tipo);
+  const pacSess=sess.filter(s=>s.pacId===pacAtual.id&&s.tipoSessao===tipo).sort((a,b)=>b.data.localeCompare(a.data));
+  if(!pacSess.length){el.innerHTML='<div class="empty-state"><span class="empty-icon">'+(tipo==='presencial'?'🏥':tipo==='familiar'?'👨‍👩‍👧':'💻')+'</span><span class="empty-text">Nenhuma sessão '+(tipo==='presencial'?'presencial':tipo==='familiar'?'familiar':'online')+' registrada</span></div>';return;}
+  el.innerHTML=pacSess.map(s=>'<div class="sess-card '+tipo+'"><div style="display:flex;justify-content:space-between;align-items:center"><div class="sess-date">'+new Date(s.data+'T12:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'})+'</div><button onclick="delSessao(\''+s.id+'\')" style="background:none;border:none;color:var(--mt);cursor:pointer;font-size:16px">🗑</button></div><div class="sess-text">'+s.texto+'</div>'+(s.resumoIA?'<div class="sess-ia"><strong>🤖 IA:</strong> '+s.resumoIA.substring(0,280)+(s.resumoIA.length>280?'...':'')+'</div>':'')+'</div>').join('');
+}
+
+function switchTab(tipo,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  ['presencial','familiar','online'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===tipo?'block':'none';
+  });
+}
+
+function initSessao(tipo){
+  if(!pacAtual)return;
+  document.getElementById('sess-tipo').value=tipo;
+  document.getElementById('sess-pac-sel').innerHTML='<option value="'+pacAtual.id+'">'+pacAtual.nome+'</option>';
+  goSc('sessao');
+}
+
+// ═══════════════════════════════════════
+// SESSÃO
+// ═══════════════════════════════════════
+function initSessaoScreen(){
+  // Fill patient select
+  const sel=document.getElementById('sess-pac-sel');
+  sel.innerHTML=pacs.length?pacs.map(p=>'<option value="'+p.id+'"'+(pacAtual&&pacAtual.id===p.id?' selected':'')+'>'+p.nome+'</option>').join(''):'<option>Sem pacientes cadastrados</option>';
+  document.getElementById('sess-txt').value='';
+  document.getElementById('sess-res').style.display='none';
+  document.getElementById('sess-acts').style.display='none';
+  document.getElementById('ia-result-card')&&(document.getElementById('ia-result-card').style.display='none');
+  finalTxt='';
+  const tipo=document.getElementById('sess-tipo').value||'presencial';
+  const icons={presencial:'🏥',familiar:'👨‍👩‍👧',online:'💻'};
+  document.getElementById('sess-sub').textContent=(icons[tipo]||'✏️')+' Nova sessão';
+}
+
+async function salvarSessao(){
+  const pacId=document.getElementById('sess-pac-sel').value;
+  const txt=document.getElementById('sess-txt').value.trim()||finalTxt.trim();
+  if(!pacId){toast('Selecione um paciente.','err');return;}
+  if(!txt){toast('Descreva a sessão ou faça uma gravação.','err');return;}
+  const tipoSessao=document.getElementById('sess-tipo').value||'presencial';
+  const resumoIA=document.getElementById('sess-res').style.display!=='none'?document.getElementById('sess-res').textContent:'';
+  const obj={paciente_id:pacId,data:new Date().toISOString().split('T')[0],texto:txt,resumo_ia:resumoIA,tipo_sessao:tipoSessao};
+  let saved=null;
+  if(useCloud&&uid&&!uid.startsWith('local_')){
+    saved=await sbIns('sessoes',obj);
+    if(!saved){toast('Erro ao salvar no servidor. Salvo localmente.','info');}
+  }
+  if(!saved){saved={...obj,id:'s'+Date.now(),pacId:obj.paciente_id,resumoIA:obj.resumo_ia,tipoSessao:obj.tipo_sessao};}
+  else{saved={...saved,pacId:saved.paciente_id,resumoIA:saved.resumo_ia,tipoSessao:saved.tipo_sessao||'presencial'};}
+  sess.unshift(saved);saveLocal();
+  toast('✅ Sessão salva no prontuário!','ok');
+  finalTxt='';
+  document.getElementById('transcr-live').innerHTML='';
+  document.getElementById('transcr-live').style.display='none';
+  document.getElementById('rec-status').style.display='none';
+  pacAtual=pacs.find(p=>p.id===pacId)||pacAtual;
+  goSc('prontuario');
+}
+
+async function salvarSessaoComIA(){
+  document.getElementById('sess-txt').value=document.getElementById('sess-txt').value||finalTxt;
+  await salvarSessao();
+}
+
+async function gerarIA(tipo){
+  const txt=document.getElementById('sess-txt').value.trim()||finalTxt.trim();
+  if(!txt){toast('Adicione anotações ou faça uma gravação primeiro.','err');return;}
+  document.getElementById('sess-acts').style.display='none';
+  const ps={
+    resumo:'Você é assistente clínico para psicólogos. Gere um RESUMO CLÍNICO conciso em português desta sessão para prontuário (máximo 8 linhas). Inclua: estado emocional, temas, intervenções, evolução e próximos passos: "'+txt+'"',
+    sugestao:'Você é assistente clínico. Sugira 3 INTERVENÇÕES TERAPÊUTICAS específicas e fundamentadas para as próximas sessões, com justificativa clínica: "'+txt+'"',
+    plano:'Você é psicólogo gerando RELATÓRIO PARA PLANO DE SAÚDE. Com base nesta sessão, gere relatório formal em português com CID-11, evolução e justificativa de continuidade: "'+txt+'"',
+    atestado:'Você é psicólogo gerando ATESTADO PSICOLÓGICO formal em português. Com base nesta sessão, gere atestado com declaração de acompanhamento e observações pertinentes: "'+txt+'"'
+  };
+  await callIA(ps[tipo],'sess-ld','sess-res','sess-acts');
+}
+function copiarIA(){navigator.clipboard.writeText(document.getElementById('sess-res').textContent).then(()=>toast('Copiado!','ok')).catch(()=>toast('Erro ao copiar','err'));}
+
+// ═══════════════════════════════════════
+// GRAVAÇÃO
+// ═══════════════════════════════════════
+function toggleRec(){isRec?pararRec():iniciarRec();}
+let wakeLock=null;
+async function iniciarRec(){
+  // Check browser support
+  const hasSpeech='webkitSpeechRecognition'in window||'SpeechRecognition'in window;
+  if(!hasSpeech){
+    toast('Use Chrome ou Edge para gravação automática.','err');
+    showRecSt('⚠️ Navegador não suportado. Use Chrome ou Edge para transcrição automática.');
+    return;
+  }
+  // Request mic permission
+  try{
+    await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  }catch(e){
+    if(e.name==='NotAllowedError'){toast('Permissão de microfone negada. Toque no cadeado na barra de endereço.','err');}
+    else{toast('Microfone indisponível: '+e.message,'err');}
+    showRecSt('⚠️ Permita o acesso ao microfone para gravar.');
+    return;
+  }
+  // Request wake lock to keep screen on during recording
+  try{if('wakeLock'in navigator)wakeLock=await navigator.wakeLock.request('screen');}catch{}
+  
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  speechRec=new SR();
+  speechRec.lang='pt-BR';
+  speechRec.continuous=true;
+  speechRec.interimResults=true;
+  speechRec.maxAlternatives=1;
+  finalTxt='';
+  let restartCount=0;
+
+  speechRec.onstart=()=>{
+    isRec=true;recSecs=0;restartCount=0;
+    document.getElementById('rec-timer').style.display='block';
+    document.getElementById('rec-pulse').style.display='inline-block';
+    document.getElementById('rec-btn').textContent='⏹ Parar gravação';
+    document.getElementById('rec-btn').style.background='#ef4444';
+    document.getElementById('rec-btn').style.boxShadow='0 0 0 4px rgba(239,68,68,0.2)';
+    document.getElementById('transcr-clear-btn').style.display='inline-flex';
+    document.getElementById('transcr-live').style.display='block';
+    document.getElementById('transcr-live').innerHTML='<span style="color:var(--mt);font-style:italic">🎙️ Ouvindo... fale normalmente.</span>';
+    showRecSt('🔴 Gravando e transcrevendo ao vivo...');
+    // Prevent screen sleep warning
+    document.getElementById('rec-status').style.background='rgba(239,68,68,0.1)';
+    document.getElementById('rec-status').style.color='#dc2626';
+    recInt=setInterval(()=>{
+      recSecs++;
+      const m=String(Math.floor(recSecs/60)).padStart(2,'0');
+      const s=String(recSecs%60).padStart(2,'0');
+      document.getElementById('rec-timer').textContent=m+':'+s;
+    },1000);
+  };
+
+  speechRec.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal){
+        finalTxt+=e.results[i][0].transcript+' ';
+      }else{
+        interim+=e.results[i][0].transcript;
+      }
+    }
+    const el=document.getElementById('transcr-live');
+    el.innerHTML=finalTxt+(interim?'<span style="color:var(--mt);font-style:italic">'+interim+'</span>':'');
+    // Auto-scroll
+    el.scrollTop=el.scrollHeight;
+  };
+
+  speechRec.onerror=e=>{
+    if(e.error==='no-speech')return; // Normal, just silence
+    if(e.error==='aborted')return; // We stopped it
+    if(e.error==='network'){showRecSt('⚠️ Erro de rede. Verifique sua conexão.');return;}
+    toast('Erro na gravação: '+e.error,'err');
+    pararRec();
+  };
+
+  speechRec.onend=()=>{
+    if(isRec&&speechRec&&restartCount<50){
+      restartCount++;
+      try{speechRec.start();}catch(e){finalizarRec();}
+    }else{
+      finalizarRec();
+    }
+  };
+
+  speechRec.start();
+}
+function pararRec(){
+  isRec=false;
+  if(speechRec){try{speechRec.abort();}catch{}speechRec=null;}
+  if(wakeLock){try{wakeLock.release();}catch{}wakeLock=null;}
+  finalizarRec();
+}
+function finalizarRec(){
+  clearInterval(recInt);
+  document.getElementById('rec-pulse').style.display='none';
+  document.getElementById('rec-btn').textContent='▶ Nova gravação';
+  document.getElementById('rec-btn').style.background='var(--pp)';
+  document.getElementById('rec-btn').style.boxShadow='none';
+  if(finalTxt.trim()){
+    document.getElementById('transcr-live').innerHTML=finalTxt;
+    showRecSt('✅ Transcrição concluída ('+finalTxt.split(' ').filter(w=>w).length+' palavras). Use os botões abaixo para gerar análise com IA.');
+    // Auto-copy to manual notes field if empty
+    const notesEl=document.getElementById('sess-txt');
+    if(notesEl&&!notesEl.value.trim()){
+      notesEl.value=finalTxt.trim();
+    }
+  }else{
+    showRecSt('⚠️ Nenhuma fala detectada. Tente novamente ou escreva as anotações manualmente.');
+  }
+}
+function limparTranscricao(){finalTxt='';document.getElementById('transcr-live').innerHTML='';document.getElementById('rec-status').style.display='none';}
+function showRecSt(msg){const el=document.getElementById('rec-status');el.style.display='block';el.textContent=msg;}
+
+// ═══════════════════════════════════════
+// DOCUMENTOS
+// ═══════════════════════════════════════
+function renderDocSel(){
+  const sel=document.getElementById('doc-pac-sel');
+  sel.innerHTML=pacs.length?pacs.map(p=>'<option value="'+p.id+'"'+(pacAtual&&pacAtual.id===p.id?' selected':'')+'>'+p.nome+'</option>').join(''):'<option>Cadastre pacientes primeiro</option>';
+  document.getElementById('doc-sub').textContent=pacAtual?'Docs · '+pacAtual.nome:'Documentos';
+}
+
+
+// ═══════════════════════════════════════
+// CENTRAL DE DOCUMENTOS - SISTEMA COMPLETO
+// ═══════════════════════════════════════
+const DOCS_CATALOG=[
+  {id:'prontuario',nome:'Prontuário Psicológico',desc:'Histórico completo do paciente',cat:'clinico',icon:'📋',tags:['prontuário','histórico','principal']},
+  {id:'relatorio',nome:'Relatório Psicológico',desc:'Relatório formal com evolução clínica',cat:'clinico',icon:'📊',tags:['relatório','formal','evolução']},
+  {id:'declaracao',nome:'Declaração Psicológica',desc:'Declaração rápida e objetiva',cat:'clinico',icon:'📄',tags:['declaração','rápido']},
+  {id:'parecer',nome:'Parecer Psicológico',desc:'Análise técnica estruturada',cat:'clinico',icon:'🔍',tags:['parecer','técnico']},
+  {id:'devolutiva',nome:'Devolutiva Psicológica',desc:'Para pais, responsáveis e escolas',cat:'escolar',icon:'💬',tags:['devolutiva','pais','escola']},
+  {id:'encaminhamento',nome:'Encaminhamento',desc:'Para outro profissional',cat:'encaminhamento',icon:'📨',tags:['encaminhamento','médico']},
+  {id:'relatorio_escolar',nome:'Relatório Escolar',desc:'Para coordenadores e professores',cat:'escolar',icon:'🏫',tags:['escolar','escola','professor']},
+  {id:'relatorio_tea',nome:'Relatório TEA / Neurodiversidade',desc:'Para suporte escolar e benefícios',cat:'escolar',icon:'🧩',tags:['tea','autismo','neurodiversidade']},
+  {id:'relatorio_tdah',nome:'Relatório TDAH',desc:'Para escola e médico',cat:'escolar',icon:'⚡',tags:['tdah','atenção']},
+  {id:'neuropediatra',nome:'Relatório para Neuropediatra',desc:'Informações clínicas detalhadas',cat:'medico',icon:'🧠',tags:['neuropediatra','médico','neurologia']},
+  {id:'psiquiatra',nome:'Relatório para Psiquiatra',desc:'Evolução e quadro atual',cat:'medico',icon:'💊',tags:['psiquiatra','psiquiatria']},
+  {id:'medico_geral',nome:'Relatório para Médico',desc:'Informações clínicas gerais',cat:'medico',icon:'🩺',tags:['médico','clínico']},
+  {id:'fonoaudiologo',nome:'Relatório para Fonoaudiólogo',desc:'Aspectos cognitivos e emocionais',cat:'medico',icon:'🗣️',tags:['fono','linguagem']},
+  {id:'convenio',nome:'Relatório para Convênio',desc:'Justificativa de sessões para reembolso',cat:'convenio',icon:'💰',tags:['convênio','plano','reembolso']},
+  {id:'evolucao_convenio',nome:'Relatório de Evolução',desc:'Progresso para plano de saúde',cat:'convenio',icon:'📈',tags:['evolução','convênio','progresso']},
+  {id:'enc_educacao',nome:'Encaminhamento Educacional',desc:'Para apoio pedagógico especializado',cat:'encaminhamento',icon:'📚',tags:['encaminhamento','educação']},
+  {id:'enc_servicos',nome:'Encaminhamento para Serviços',desc:'CAPS, CRAS, CREAS, assistência',cat:'encaminhamento',icon:'🏢',tags:['caps','cras','serviços']},
+  {id:'atestado',nome:'Atestado Psicológico',desc:'Para ausência ou afastamento',cat:'personalizado',icon:'📜',tags:['atestado','ausência']},
+  {id:'evolucao_mensal',nome:'Relatório de Evolução Mensal',desc:'Resumo do mês terapêutico',cat:'clinico',icon:'🗓️',tags:['evolução','mensal']},
+  {id:'alta',nome:'Relatório de Alta Terapêutica',desc:'Conclusão do processo terapêutico',cat:'clinico',icon:'✅',tags:['alta','conclusão','término']},
+  {id:'orientacao_familiar',nome:'Orientação Familiar',desc:'Orientações para família e cuidadores',cat:'escolar',icon:'👨‍👩‍👧',tags:['família','orientação','cuidadores']},
+];
+const CATS_DOC={clinico:'📋 Clínicos',escolar:'🏫 Escolares',medico:'🩺 Médicos',encaminhamento:'📤 Encaminhamentos',convenio:'💰 Convênios',personalizado:'⚙️ Personalizados'};
+let docFavoritos=S.get('doc_fav')||[];
+let docUsos=S.get('doc_usos')||{};
+let docHistorico=S.get('doc_hist')||[];
+let docAtualId=null;
+
+function renderDocSel(){
+  const sel=document.getElementById('doc-pac-sel');
+  if(!sel)return;
+  sel.innerHTML=pacs.length?pacs.map(p=>'<option value="'+p.id+'"'+(pacAtual&&pacAtual.id===p.id?' selected':'')+'>'+p.nome+'</option>').join(''):'<option>Cadastre pacientes primeiro</option>';
+  document.getElementById('doc-sub').textContent=pacAtual?'Docs · '+pacAtual.nome:'Central de Documentos';
+  renderDocFavoritos();renderDocMaisUsados();renderDocHistorico();
+}
+
+function openModalDocs(){
+  document.getElementById('doc-search-input').value='';
+  filtrarDocs('');
+  openM('m-documentos');
+  setTimeout(()=>document.getElementById('doc-search-input')?.focus(),300);
+}
+
+function filtrarDocs(q){
+  q=q.toLowerCase().trim();
+  const lista=document.getElementById('doc-modal-lista');
+  if(!lista)return;
+  const filtered=q?DOCS_CATALOG.filter(d=>d.nome.toLowerCase().includes(q)||d.desc.toLowerCase().includes(q)||d.tags.some(t=>t.includes(q))):DOCS_CATALOG;
+  if(!filtered.length){lista.innerHTML='<div class="empty-state"><span class="empty-icon">🔍</span><span class="empty-text">Nenhum documento encontrado</span></div>';return;}
+  let out='';
+  if(!q){
+    const favs=DOCS_CATALOG.filter(d=>docFavoritos.includes(d.id));
+    const top=Object.entries(docUsos).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([id])=>DOCS_CATALOG.find(d=>d.id===id)).filter(Boolean);
+    if(favs.length)out+=buildDocSection('⭐ Favoritos',favs);
+    if(top.length)out+=buildDocSection('🔥 Mais utilizados',top);
+    Object.entries(CATS_DOC).forEach(([catId,catLabel])=>{
+      const catDocs=filtered.filter(d=>d.cat===catId);
+      if(catDocs.length)out+=buildDocSection(catLabel,catDocs);
+    });
+  }else{
+    out+=buildDocSection('Resultados ('+filtered.length+')',filtered);
+  }
+  lista.innerHTML=out;
+}
+
+function buildDocSection(label,docs){
+  return '<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">'+label+'</div>'+
+    docs.map(d=>{
+      const isFav=docFavoritos.includes(d.id);
+      const n=docUsos[d.id]||0;
+      return '<div style="display:flex;align-items:center;gap:12px;padding:11px 12px;background:var(--sf);border-radius:12px;margin-bottom:6px;cursor:pointer" onclick="selecionarDoc(\''+d.id+'\')">'+
+        '<div style="font-size:22px;width:38px;height:38px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.08);flex-shrink:0">'+d.icon+'</div>'+
+        '<div style="flex:1"><div style="font-size:14px;font-weight:500;color:var(--tx)">'+d.nome+'</div><div style="font-size:12px;color:var(--mt)">'+d.desc+(n?' · '+n+'x':'')+'</div></div>'+
+        '<button onclick="event.stopPropagation();toggleDocFav(\''+d.id+'\')" style="background:none;border:none;cursor:pointer;font-size:18px;padding:4px;color:'+(isFav?'#f59e0b':'var(--bd)')+'">'+(isFav?'⭐':'☆')+'</button>'+
+      '</div>';
+    }).join('')+
+  '</div>';
+}
+
+function toggleDocFav(id){
+  docFavoritos=docFavoritos.includes(id)?docFavoritos.filter(x=>x!==id):[id,...docFavoritos];
+  S.set('doc_fav',docFavoritos);
+  filtrarDocs(document.getElementById('doc-search-input').value);
+  renderDocFavoritos();
+}
+
+function renderDocFavoritos(){
+  const sec=document.getElementById('doc-favoritos-section');
+  const lista=document.getElementById('doc-favoritos-lista');
+  if(!sec||!lista)return;
+  if(!docFavoritos.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  const favDocs=docFavoritos.map(id=>DOCS_CATALOG.find(d=>d.id===id)).filter(Boolean);
+  lista.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap">'+favDocs.map(d=>
+    '<button onclick="selecionarDoc(\''+d.id+'\')" style="background:white;border:1.5px solid var(--bd);border-radius:12px;padding:9px 13px;font-size:13px;font-family:\'DM Sans\',sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px">'+d.icon+' '+d.nome+'</button>'
+  ).join('')+'</div>';
+}
+
+function renderDocMaisUsados(){
+  const sec=document.getElementById('doc-mais-usados-section');
+  const lista=document.getElementById('doc-mais-usados-lista');
+  if(!sec||!lista)return;
+  const sorted=Object.entries(docUsos).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  if(!sorted.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  const docs=sorted.map(([id,n])=>{const d=DOCS_CATALOG.find(x=>x.id===id);return d?{...d,n}:null}).filter(Boolean);
+  lista.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap">'+docs.map(d=>
+    '<button onclick="selecionarDoc(\''+d.id+'\')" style="background:white;border:1.5px solid var(--bd);border-radius:12px;padding:9px 13px;font-size:13px;font-family:\'DM Sans\',sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px">'+d.icon+' '+d.nome+' <span style="background:var(--pp-l);color:var(--pp);padding:1px 6px;border-radius:20px;font-size:11px">'+d.n+'x</span></button>'
+  ).join('')+'</div>';
+}
+
+function renderDocHistorico(){
+  const lista=document.getElementById('doc-historico-lista');
+  const count=document.getElementById('doc-hist-count');
+  if(!lista)return;
+  if(!docHistorico.length){
+    lista.innerHTML='<div class="empty-state"><span class="empty-icon">📄</span><span class="empty-text">Nenhum documento gerado ainda.</span></div>';
+    if(count)count.textContent='';return;
+  }
+  if(count)count.textContent=docHistorico.length+' doc'+(docHistorico.length!==1?'s':'');
+  lista.innerHTML=docHistorico.slice(0,10).map(h=>{
+    const pac=pacs.find(p=>p.id===h.pacId)||{nome:h.pacNome||'Paciente'};
+    const d=DOCS_CATALOG.find(x=>x.id===h.docId)||{icon:'📄',nome:h.docId};
+    const dt=new Date(h.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    return '<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f3f3f3;cursor:pointer" onclick="verDocHist(\''+h.id+'\')">'+
+      '<div style="width:36px;height:36px;background:var(--pp-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">'+d.icon+'</div>'+
+      '<div style="flex:1"><div style="font-size:14px;font-weight:500;color:var(--tx)">'+d.nome+'</div><div style="font-size:12px;color:var(--mt)">'+pac.nome+' · '+dt+'</div></div>'+
+      '<div style="font-size:12px;color:var(--pp);font-weight:500">Ver ›</div>'+
+    '</div>';
+  }).join('');
+}
+
+function selecionarDoc(docId){
+  closeM('m-documentos');
+  docAtualId=docId;
+  docUsos[docId]=(docUsos[docId]||0)+1;
+  S.set('doc_usos',docUsos);
+  renderDocMaisUsados();
+  gerarDoc(docId);
+}
+
+async function gerarDoc(tipo){
+  const pacId=document.getElementById('doc-pac-sel').value;
+  const pac=pacs.find(p=>p.id===pacId)||{nome:'Paciente',abordagem:'',obs:''};
+  const pacSess=sess.filter(s=>s.pacId===pacId).sort((a,b)=>b.data.localeCompare(a.data));
+  const nS=pacSess.length;
+  const historico=pacSess.slice(0,8).map(s=>'['+s.data+'-'+s.tipoSessao+']: '+s.texto+(s.resumoIA?' IA:'+s.resumoIA.substring(0,100):'')).join(' | ').substring(0,3500);
+  const cfg2=S.get('config')||{};
+  const prof=cfg2.nome?cfg2.nome+(cfg2.crp?', CRP '+cfg2.crp:''):'Psicóloga';
+  const ctx='Prof:'+prof+' Pac:'+pac.nome+' Abord:'+(pac.abordagem||'?')+' Sess:'+nS+' CID:'+(pac.cid||'?')+' Obs:'+(pac.obs||'?')+' Hist:'+historico;
+  const d=DOCS_CATALOG.find(x=>x.id===tipo)||{nome:tipo,icon:'📄'};
+  const el=document.getElementById('doc-result-card');
+  if(el){
+    el.style.display='block';
+    document.getElementById('doc-result-title').textContent=d.icon+' '+d.nome;
+    document.getElementById('doc-result-meta').textContent=pac.nome+' · '+new Date().toLocaleDateString('pt-BR');
+    document.getElementById('doc-acts').style.display='none';
+  }
+  const PROMPTS={
+    prontuario:'Gere PRONTUÁRIO PSICOLÓGICO completo e formal em português. Seções: identificação, queixa, histórico, evolução, intervenções, estado atual, plano. Assine como '+prof+'. '+ctx,
+    relatorio:'Gere RELATÓRIO PSICOLÓGICO formal. Seções: identificação, demanda, procedimentos, resultados, conclusão, recomendações. Assine como '+prof+'. '+ctx,
+    declaracao:'Gere DECLARAÇÃO PSICOLÓGICA formal para '+pac.nome+'. Declaração de acompanhamento, período, sessões. Assine como '+prof+'. '+ctx,
+    parecer:'Gere PARECER PSICOLÓGICO estruturado. Objeto, análise clínica, conclusões, recomendações. Assine como '+prof+'. '+ctx,
+    devolutiva:'Gere DEVOLUTIVA PSICOLÓGICA para pais/escola sobre '+pac.nome+'. Linguagem acessível, avaliação, progresso, recomendações. Assine como '+prof+'. '+ctx,
+    encaminhamento:'Gere CARTA DE ENCAMINHAMENTO para '+pac.nome+'. Identificação, motivo, histórico, pedido de avaliação. Assine como '+prof+'. '+ctx,
+    relatorio_escolar:'Gere RELATÓRIO ESCOLAR PSICOLÓGICO para '+pac.nome+'. Perfil, comportamento, aprendizagem, recomendações pedagógicas. Assine como '+prof+'. '+ctx,
+    relatorio_tea:'Gere RELATÓRIO TEA/NEURODIVERSIDADE para '+pac.nome+'. Perfil, pontos fortes, desafios, suporte necessário, recomendações. Assine como '+prof+'. '+ctx,
+    relatorio_tdah:'Gere RELATÓRIO TDAH para '+pac.nome+'. Perfil atencional, impacto funcional, estratégias. Assine como '+prof+'. '+ctx,
+    neuropediatra:'Gere RELATÓRIO PARA NEUROPEDIATRA sobre '+pac.nome+'. Linguagem técnica médica, queixa, histórico, evolução, hipóteses. Assine como '+prof+'. '+ctx,
+    psiquiatra:'Gere RELATÓRIO PARA PSIQUIATRA sobre '+pac.nome+'. Quadro atual, evolução, resposta ao tratamento, recomendações. Assine como '+prof+'. '+ctx,
+    medico_geral:'Gere RELATÓRIO PARA MÉDICO sobre '+pac.nome+'. Queixa, histórico psicológico, evolução, aspectos relevantes. Assine como '+prof+'. '+ctx,
+    fonoaudiologo:'Gere RELATÓRIO PARA FONOAUDIÓLOGO sobre '+pac.nome+'. Aspectos emocionais, cognitivos e comportamentais. Assine como '+prof+'. '+ctx,
+    convenio:'Gere RELATÓRIO PARA PLANO DE SAÚDE para '+pac.nome+'. CID-11, evolução, justificativa de continuidade. Assine como '+prof+'. '+ctx,
+    evolucao_convenio:'Gere RELATÓRIO DE EVOLUÇÃO para convênio. Objetivos, progressos, ajustes. Assine como '+prof+'. '+ctx,
+    enc_educacao:'Gere ENCAMINHAMENTO EDUCACIONAL para '+pac.nome+'. Justificativa, demandas, suporte recomendado. Assine como '+prof+'. '+ctx,
+    enc_servicos:'Gere ENCAMINHAMENTO PARA SERVIÇOS (CAPS/CRAS) para '+pac.nome+'. Motivo, histórico, urgência. Assine como '+prof+'. '+ctx,
+    atestado:'Gere ATESTADO PSICOLÓGICO para '+pac.nome+'. Declaração de acompanhamento, finalidade, período. Assine como '+prof+'. '+ctx,
+    evolucao_mensal:'Gere RELATÓRIO DE EVOLUÇÃO MENSAL para '+pac.nome+'. Objetivos do mês, progressos, desafios, próximas metas. Assine como '+prof+'. '+ctx,
+    alta:'Gere RELATÓRIO DE ALTA TERAPÊUTICA para '+pac.nome+'. Motivo da alta, objetivos alcançados, estado atual, orientações. Assine como '+prof+'. '+ctx,
+    orientacao_familiar:'Gere ORIENTAÇÕES FAMILIARES para família de '+pac.nome+'. Linguagem acessível, orientações práticas, como apoiar, sinais de atenção. Assine como '+prof+'. '+ctx,
+  };
+  const prompt=PROMPTS[tipo]||'Gere documento "'+tipo+'" profissional para '+pac.nome+'. Assine como '+prof+'. '+ctx;
+  await callIA(prompt,'doc-ld','doc-res','doc-acts');
+  el&&el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function salvarDocHistorico(){
+  const txt=document.getElementById('doc-res').textContent;
+  if(!txt||!docAtualId)return;
+  const pacId=document.getElementById('doc-pac-sel').value;
+  const pac=pacs.find(p=>p.id===pacId)||{nome:'Paciente'};
+  const h={id:'h'+Date.now(),docId:docAtualId,pacId,pacNome:pac.nome,texto:txt,data:new Date().toISOString()};
+  docHistorico.unshift(h);
+  if(docHistorico.length>50)docHistorico=docHistorico.slice(0,50);
+  S.set('doc_hist',docHistorico);
+  renderDocHistorico();
+  toast('Salvo no histórico!','ok');
+}
+
+function verDocHist(id){
+  const h=docHistorico.find(x=>x.id===id);
+  if(!h)return;
+  const d=DOCS_CATALOG.find(x=>x.id===h.docId)||{icon:'📄',nome:h.docId};
+  const pac=pacs.find(p=>p.id===h.pacId)||{nome:h.pacNome||'Paciente'};
+  docAtualId=h.docId;
+  const el=document.getElementById('doc-result-card');
+  if(el){
+    el.style.display='block';
+    document.getElementById('doc-result-title').textContent=d.icon+' '+d.nome;
+    document.getElementById('doc-result-meta').textContent=pac.nome+' · '+new Date(h.data).toLocaleDateString('pt-BR');
+    document.getElementById('doc-ld').style.display='none';
+    document.getElementById('doc-res').style.display='block';
+    document.getElementById('doc-res').textContent=h.texto;
+    document.getElementById('doc-acts').style.display='flex';
+    el.scrollIntoView({behavior:'smooth'});
+  }
+}
+
+function copiarDoc(){
+  navigator.clipboard.writeText(document.getElementById('doc-res').textContent)
+    .then(()=>toast('Copiado!','ok')).catch(()=>toast('Erro ao copiar','err'));
+}
+
+
+// ═══════════════════════════════════════
+// AGENDA
+// ═══════════════════════════════════════
+function renderCal(){
+  const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('cal-titulo').textContent=meses[calMes]+' '+calAno;
+  document.getElementById('agenda-sub').textContent=meses[calMes]+' '+calAno;
+  const labels=document.getElementById('cal-labels');
+  labels.innerHTML=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>'<div class="cal-lbl">'+d+'</div>').join('');
+  const grid=document.getElementById('cal-days');
+  grid.innerHTML='';
+  const hoje=new Date();
+  const primeiro=new Date(calAno,calMes,1);
+  const ultimo=new Date(calAno,calMes+1,0);
+  for(let i=0;i<primeiro.getDay();i++){
+    const prev=new Date(calAno,calMes,1-primeiro.getDay()+i);
+    grid.innerHTML+='<div class="cal-day other">'+prev.getDate()+'</div>';
+  }
+  for(let d=1;d<=ultimo.getDate();d++){
+    const ds=calAno+'-'+String(calMes+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday=hoje.getDate()===d&&hoje.getMonth()===calMes&&hoje.getFullYear()===calAno;
+    const hasEvent=cons.some(c=>c.data===ds);
+    grid.innerHTML+='<div class="cal-day'+(isToday?' today':'')+(hasEvent?' has-event':'')+'" onclick="verDia(\''+ds+'\')">'+d+'</div>';
+  }
+}
+function mudaMes(d){calMes+=d;if(calMes>11){calMes=0;calAno++;}if(calMes<0){calMes=11;calAno--;}renderCal();}
+function verDia(ds){
+  const card=document.getElementById('agenda-day-card');
+  const d=new Date(ds+'T12:00');
+  document.getElementById('agenda-day-title').textContent=d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+  const dayC=cons.filter(c=>c.data===ds).sort((a,b)=>a.hora.localeCompare(b.hora));
+  const lista=document.getElementById('agenda-day-list');
+  lista.innerHTML=dayC.length?dayC.map(c=>{
+    const pac=pacs.find(p=>p.id===c.pacId)||{nome:c.pacNome||'Paciente'};
+    return '<div class="appt-item"><div class="appt-time">'+c.hora+'</div><div style="flex:1"><div style="font-size:14px;font-weight:500">'+pac.nome+'</div><div style="font-size:12px;color:var(--mt)">'+(c.tipo||'Sessão')+'</div></div><span class="badge '+(c.status==='confirmado'?'b-ok':'b-wt')+'">'+(c.status==='confirmado'?'Confirmado':'Aguardando')+'</span></div>';
+  }).join(''):'<div class="empty-state"><span class="empty-icon">📅</span><span class="empty-text">Nenhuma consulta neste dia</span></div>';
+  card.style.display='block';card.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ═══════════════════════════════════════
+// FINANCEIRO
+// ═══════════════════════════════════════
+function renderFin(){
+  const mes=new Date().getMonth(),ano=new Date().getFullYear();
+  const pgMes=pags.filter(p=>{try{const d=new Date(p.data+'T12:00');return d.getMonth()===mes&&d.getFullYear()===ano;}catch{return false;}});
+  const pagos=pgMes.filter(p=>p.status==='pago');
+  const pendentes=pags.filter(p=>p.status==='pendente');
+  const total=pagos.reduce((a,p)=>a+(+p.val||0),0);
+  const pend=pendentes.reduce((a,p)=>a+(+p.val||0),0);
+  document.getElementById('fin-total').textContent='R$'+total.toLocaleString('pt-BR');
+  document.getElementById('fin-pend').textContent='R$'+pend.toLocaleString('pt-BR');
+  document.getElementById('fin-count').textContent=pagos.length;
+  document.getElementById('fin-ticket').textContent='R$'+(pagos.length?Math.round(total/pagos.length):0);
+  const lista=document.getElementById('fin-lista');
+  lista.innerHTML=pgMes.length?pgMes.sort((a,b)=>b.data.localeCompare(a.data)).map(p=>{
+    const pac=pacs.find(x=>x.id===p.pacId)||{nome:p.pacNome||'Paciente'};
+    const ok=p.status==='pago';
+    return '<div class="tr"><div class="tr-ico" style="background:'+(ok?'var(--gr-l)':'var(--am-l)')+';color:'+(ok?'var(--gr)':'var(--am)')+';">'+(ok?'✓':'⏳')+'</div><div style="flex:1"><div style="font-size:14px;font-weight:500">'+pac.nome+'</div><div style="font-size:12px;color:var(--mt)">'+new Date(p.data+'T12:00').toLocaleDateString('pt-BR')+' · '+(p.forma||'PIX')+'</div></div><div style="font-size:14px;font-weight:600;color:'+(ok?'var(--gr)':'var(--am)')+';">'+(ok?'+ ':'')+'R$'+p.val+'</div></div>';
+  }).join(''):'<div class="empty-state"><span class="empty-icon">💰</span><span class="empty-text">Nenhuma movimentação este mês</span></div>';
+  const pendEl=document.getElementById('fin-pend-lista');
+  pendEl.innerHTML=pendentes.length?pendentes.map(p=>{
+    const pac=pacs.find(x=>x.id===p.pacId)||{nome:p.pacNome||'Paciente'};
+    return '<div class="tr"><div class="tr-ico" style="background:var(--am-l);color:var(--am);">⏳</div><div style="flex:1"><div style="font-size:14px;font-weight:500">'+pac.nome+'</div><div style="font-size:12px;color:var(--mt)">'+(p.descricao||'Sessão')+' · '+(p.forma||'PIX')+'</div></div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:14px;font-weight:600;color:var(--am);">R$'+p.val+'</div><button onclick="marcarPago(\''+p.id+'\')" style="background:var(--gr);color:white;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">Pago</button></div></div>';
+  }).join(''):'<div class="empty-state"><span class="empty-icon">✅</span><span class="empty-text">Nenhuma pendência</span></div>';
+}
+async function marcarPago(id){
+  if(useCloud&&uid&&!uid.startsWith('local_'))await sbUpd('pagamentos',id,{status:'pago'});
+  pags=pags.map(p=>p.id===id?{...p,status:'pago'}:p);saveLocal();renderFin();renderHome();toast('Pagamento confirmado!','ok');
+}
+
+// ═══════════════════════════════════════
+// CADASTRO
+// ═══════════════════════════════════════
+async function salvarPac(){
+  const nome=document.getElementById('c-nome').value.trim();
+  if(!nome){toast('Nome é obrigatório.','err');return;}
+  if(!document.getElementById('c-lgpd').checked){toast('Confirme a autorização LGPD.','err');return;}
+  const obj={nome,nascimento:document.getElementById('c-nasc').value||null,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,responsavel:document.getElementById('c-resp').value,abordagem:document.getElementById('c-ab').value,tipo_atendimento:document.getElementById('c-tipo').value,valor:document.getElementById('c-val').value||null,pagamento:document.getElementById('c-pag').value,cid:document.getElementById('c-cid').value,obs:document.getElementById('c-obs').value};
+  let saved=null;
+  if(useCloud&&uid&&!uid.startsWith('local_')){saved=await sbIns('pacientes',obj);}
+  if(!saved){saved={...obj,id:'p'+Date.now(),val:obj.valor,tipo:obj.tipo_atendimento};}
+  else{saved={...saved,val:saved.valor,tipo:saved.tipo_atendimento};}
+  pacs.unshift(saved);saveLocal();
+  ['c-nome','c-nasc','c-tel','c-email','c-resp','c-val','c-cid','c-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('c-lgpd').checked=false;
+  toast('Paciente '+nome+' cadastrado!','ok');
+  pacAtual=saved;goSc('prontuario');
+}
+
+// ═══════════════════════════════════════
+// DELETAR SESSÃO
+// ═══════════════════════════════════════
+async function delSessao(id){
+  if(!confirm('Remover esta sessão?'))return;
+  if(useCloud&&uid&&!uid.startsWith('local_'))await supa.from('sessoes').delete().eq('id',id).eq('usuario_id',uid).catch(()=>{});
+  sess=sess.filter(s=>s.id!==id);saveLocal();renderPron();toast('Sessão removida.','err');
+}
+
+// ═══════════════════════════════════════
+// MODAIS
+// ═══════════════════════════════════════
+function openM(id){
+  const m=document.getElementById(id);
+  if(id==='m-consulta'){
+    document.getElementById('m-pac').innerHTML=pacs.length?pacs.map(p=>'<option value="'+p.id+'">'+p.nome+'</option>').join(''):'<option>Sem pacientes</option>';
+    document.getElementById('m-data').value=new Date().toISOString().split('T')[0];
+  }
+  if(id==='m-pagamento'){
+    document.getElementById('mp-pac').innerHTML=pacs.length?pacs.map(p=>'<option value="'+p.id+'">'+p.nome+'</option>').join(''):'<option>Sem pacientes</option>';
+    document.getElementById('mp-data').value=new Date().toISOString().split('T')[0];
+  }
+  m.style.display='flex';setTimeout(()=>m.classList.add('open'),10);
+}
+function closeM(id){const m=document.getElementById(id);m.classList.remove('open');setTimeout(()=>m.style.display='none',200);}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeM(m.id);}));
+
+async function salvarConsulta(){
+  const pacId=document.getElementById('m-pac').value;
+  const pac=pacs.find(p=>p.id===pacId);
+  const obj={paciente_id:pacId,pac_nome:pac?.nome||'Paciente',data:document.getElementById('m-data').value,hora:document.getElementById('m-hora').value,tipo:document.getElementById('m-tipo').value,status:document.getElementById('m-status').value,duracao:'50 min'};
+  let saved=null;
+  if(useCloud&&uid&&!uid.startsWith('local_')){saved=await sbIns('consultas',obj);}
+  if(!saved){saved={...obj,id:'c'+Date.now(),pacId:obj.paciente_id,pacNome:obj.pac_nome};}
+  else{saved={...saved,pacId:saved.paciente_id,pacNome:saved.pac_nome};}
+  cons.unshift(saved);saveLocal();
+  closeM('m-consulta');renderHome();renderCal();toast('Consulta agendada!','ok');
+}
+
+async function salvarPag(){
+  const pacId=document.getElementById('mp-pac').value;
+  const pac=pacs.find(p=>p.id===pacId);
+  const obj={paciente_id:pacId,pac_nome:pac?.nome||'Paciente',valor:document.getElementById('mp-val').value||null,data:document.getElementById('mp-data').value,forma:document.getElementById('mp-forma').value,status:document.getElementById('mp-status').value,descricao:document.getElementById('mp-desc').value};
+  let saved=null;
+  if(useCloud&&uid&&!uid.startsWith('local_')){saved=await sbIns('pagamentos',obj);}
+  if(!saved){saved={...obj,id:'pg'+Date.now(),pacId:obj.paciente_id,pacNome:obj.pac_nome,val:obj.valor};}
+  else{saved={...saved,pacId:saved.paciente_id,pacNome:saved.pac_nome,val:saved.valor};}
+  pags.unshift(saved);saveLocal();
+  closeM('m-pagamento');renderFin();renderHome();toast('Pagamento registrado!','ok');
+}
+
+
+// ── Tipo de sessão visual ──
+function selectTipo(tipo, btn){
+  document.querySelectorAll('.sess-tipo-btn').forEach(b=>{
+    b.style.background='var(--sf)';
+    b.style.borderColor='var(--bd)';
+    b.style.color='var(--mt)';
+  });
+  btn.style.background='var(--pp-l)';
+  btn.style.borderColor='var(--pp)';
+  btn.style.color='var(--pp)';
+  document.getElementById('sess-tipo').value=tipo;
+}
+
+// ── Iniciar sessão rápida do dashboard ──
+function iniciarSessaoRapida(tipo){
+  goSc('sessao');
+  setTimeout(()=>{
+    document.getElementById('sess-tipo').value=tipo;
+    document.querySelectorAll('.sess-tipo-btn').forEach(b=>{
+      if(b.dataset.tipo===tipo){
+        b.style.background='var(--pp-l)';b.style.borderColor='var(--pp)';b.style.color='var(--pp)';
+      }else{
+        b.style.background='var(--sf)';b.style.borderColor='var(--bd)';b.style.color='var(--mt)';
+      }
+    });
+  },100);
+}
+
+
+// ═══════════════════════════════════════
+// PDF PROFISSIONAL
+// ═══════════════════════════════════════
+function exportarPDF(){
+  if(window._jspdfErr||!window.jspdf){
+    // Fallback: print
+    const txt=document.getElementById('doc-res').textContent;
+    if(!txt){toast('Gere um documento primeiro.','err');return;}
+    const w=window.open('','_blank');
+    const cfg2=S.get('config')||{};
+    w.document.write('<html><head><title>PsiOn - Documento</title><style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:40px;color:#1a1a2e;line-height:1.8}h1{color:#534AB7;font-size:20px;border-bottom:2px solid #534AB7;padding-bottom:12px}pre{white-space:pre-wrap;font-family:Georgia,serif;font-size:14px}.footer{margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;text-align:center}</style></head><body>');
+    w.document.write('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px"><div><h1 style="margin:0;color:#534AB7;font-size:22px">PsiOn</h1><div style="font-size:12px;color:#6b7280">Prontuário Inteligente</div></div><div style="text-align:right;font-size:13px;color:#6b7280"><div>'+(cfg2.nome||'Psicóloga')+'</div><div>'+(cfg2.crp?'CRP '+cfg2.crp:'')+'</div><div>'+new Date().toLocaleDateString('pt-BR')+'</div></div></div>');
+    w.document.write('<div style="background:#EEEDFE;padding:14px 18px;border-radius:8px;margin-bottom:20px;font-size:13px"><strong>'+document.getElementById('doc-result-title').textContent+'</strong><br><span style="color:#6b7280">'+document.getElementById('doc-result-meta').textContent+'</span></div>');
+    w.document.write('<pre>'+txt.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</pre>');
+    w.document.write('<div class="footer">Documento gerado via PsiOn · '+new Date().toLocaleString('pt-BR')+(cfg2.clinica?' · '+cfg2.clinica:'')+'<br>'+(cfg2.crp?'CRP '+cfg2.crp+' · ':'')+(cfg2.nome||'')+'</div>');
+    w.document.write('</body></html>');
+    w.document.close();
+    setTimeout(()=>w.print(),500);
+    return;
+  }
+  const txt=document.getElementById('doc-res').textContent;
+  if(!txt){toast('Gere um documento primeiro.','err');return;}
+  const cfg2=S.get('config')||{};
+  try{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({unit:'mm',format:'a4'});
+    const W=210,M=20,CW=W-M*2;
+    // Header
+    doc.setFillColor(83,74,183);
+    doc.rect(0,0,W,28,'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(18);
+    doc.setTextColor(255,255,255);
+    doc.text('PsiOn',M,12);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.text('Prontuário Inteligente com IA',M,18);
+    // Prof info
+    doc.setFontSize(9);
+    doc.setTextColor(196,190,255);
+    const profNome=cfg2.nome||'Psicóloga';
+    const profCRP=cfg2.crp?'CRP '+cfg2.crp:'';
+    doc.text(profNome,W-M-doc.getTextWidth(profNome),12);
+    if(profCRP)doc.text(profCRP,W-M-doc.getTextWidth(profCRP),18);
+    // Doc title
+    let y=38;
+    doc.setFillColor(238,237,254);
+    doc.roundedRect(M,y-6,CW,14,2,2,'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(13);
+    doc.setTextColor(60,52,137);
+    doc.text(document.getElementById('doc-result-title').textContent,M+4,y+2);
+    y+=16;
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.setTextColor(107,114,128);
+    doc.text(document.getElementById('doc-result-meta').textContent+' · '+new Date().toLocaleDateString('pt-BR'),M,y);
+    y+=8;
+    doc.setDrawColor(229,231,235);
+    doc.line(M,y,W-M,y);
+    y+=6;
+    // Body
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(11);
+    doc.setTextColor(26,26,46);
+    const linhas=doc.splitTextToSize(txt,CW);
+    linhas.forEach(l=>{
+      if(y>270){
+        doc.addPage();
+        doc.setFillColor(83,74,183);
+        doc.rect(0,0,W,8,'F');
+        y=16;
+      }
+      doc.text(l,M,y);
+      y+=5.5;
+    });
+    // Footer
+    const pages=doc.getNumberOfPages();
+    for(let i=1;i<=pages;i++){
+      doc.setPage(i);
+      doc.setFillColor(248,247,255);
+      doc.rect(0,285,W,12,'F');
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8);
+      doc.setTextColor(107,114,128);
+      doc.text(profNome+(profCRP?' · '+profCRP:'')+' · PsiOn',M,292);
+      doc.text('Pág '+i+'/'+pages,W-M-10,292);
+    }
+    doc.save('psion-documento-'+Date.now()+'.pdf');
+    toast('PDF baixado!','ok');
+  }catch(e){
+    console.error(e);
+    toast('Erro no PDF. Usando impressão...','info');
+    exportarPDF(); // fallback to print
+  }
+}
+
+// ═══════════════════════════════════════
+// IA API
+// ═══════════════════════════════════════
+// Edge Function URL - proxy seguro para a IA
+const IA_URL='https://ctxwjmwcswlelkuuqkjs.supabase.co/functions/v1/smooth-endpoint';
+
+async function callIA(prompt,ldId,resId,actId,maxTokens=1500){
+  const ld=document.getElementById(ldId),res=document.getElementById(resId);
+  if(!ld||!res)return;
+  ld.style.display='flex';res.style.display='none';
+  if(actId){const a=document.getElementById(actId);if(a)a.style.display='none';}
+  try{
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),45000);
+    const r=await fetch(IA_URL,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+SUPA_KEY
+      },
+      body:JSON.stringify({prompt,max_tokens:maxTokens}),
+      signal:controller.signal
+    });
+    clearTimeout(timeout);
+    if(!r.ok){
+      const errTxt=await r.text().catch(()=>'');
+      throw new Error('HTTP '+r.status+': '+errTxt.substring(0,100));
+    }
+    const d=await r.json();
+    if(d.error){throw new Error(d.error.message||JSON.stringify(d.error));}
+    const txt=d.content?.map(i=>i.text||'').join('')||'Não foi possível gerar.';
+    ld.style.display='none';res.style.display='block';res.textContent=txt;
+    if(actId){const a=document.getElementById(actId);if(a)a.style.display='flex';}
+  }catch(e){
+    ld.style.display='none';res.style.display='block';
+    if(e.name==='AbortError'){
+      res.textContent='⏱️ Tempo esgotado. Tente novamente.';
+    }else if(!navigator.onLine){
+      res.textContent='📵 Sem internet. Verifique sua conexão.';
+    }else{
+      res.textContent='⚠️ Erro: '+e.message+'. Tente novamente.';
+      console.error('IA error:',e);
+    }
+  }
+}
+
+
+
+// ═══ CONFIGURAÇÕES ═══
+function initConfig(){
+  const cfg=S.get('config')||{};
+  const fields=['nome','crp','esp','clinica','end','tel','email','valor','abordagem','duracao'];
+  fields.forEach(f=>{const el=document.getElementById('cfg-'+f);if(el&&cfg[f])el.value=cfg[f];});
+  if(cfg.transcr!==undefined)document.getElementById('cfg-transcr').checked=cfg.transcr;
+  if(cfg.iaAuto!==undefined)document.getElementById('cfg-ia-auto').checked=cfg.iaAuto;
+  updateConfigPreview();
+  // Update sidebar name
+  if(cfg.nome){
+    const user=S.get('user')||{};
+    user.nome=cfg.nome;
+    S.set('user',user);
+  }
+}
+
+function updateConfigPreview(){
+  const nome=document.getElementById('cfg-nome')?.value||'Dra. Psicóloga';
+  const crp=document.getElementById('cfg-crp')?.value||'CRP 12/00000';
+  const esp=document.getElementById('cfg-esp')?.value||'';
+  const clinica=document.getElementById('cfg-clinica')?.value||'';
+  const tel=document.getElementById('cfg-tel')?.value||'';
+  if(document.getElementById('prev-nome'))document.getElementById('prev-nome').textContent=nome;
+  if(document.getElementById('prev-crp'))document.getElementById('prev-crp').textContent=crp;
+  if(document.getElementById('prev-esp'))document.getElementById('prev-esp').textContent=esp;
+  if(document.getElementById('prev-clinica'))document.getElementById('prev-clinica').textContent=clinica;
+  if(document.getElementById('prev-tel'))document.getElementById('prev-tel').textContent=tel;
+}
+
+function salvarConfig(){
+  const cfg={
+    nome:document.getElementById('cfg-nome').value,
+    crp:document.getElementById('cfg-crp').value,
+    esp:document.getElementById('cfg-esp').value,
+    clinica:document.getElementById('cfg-clinica').value,
+    end:document.getElementById('cfg-end').value,
+    tel:document.getElementById('cfg-tel').value,
+    email:document.getElementById('cfg-email').value,
+    valor:document.getElementById('cfg-valor').value,
+    abordagem:document.getElementById('cfg-abordagem').value,
+    duracao:document.getElementById('cfg-duracao').value,
+    transcr:document.getElementById('cfg-transcr').checked,
+    iaAuto:document.getElementById('cfg-ia-auto').checked
+  };
+  S.set('config',cfg);
+  // Update sidebar
+  if(cfg.nome){
+    const user=S.get('user')||{};
+    user.nome=cfg.nome;S.set('user',user);
+    document.getElementById('h-greeting').textContent=(new Date().getHours()<12?'Bom dia':new Date().getHours()<18?'Boa tarde':'Boa noite')+', '+cfg.nome.split(' ')[0]+'!';
+  }
+  toast('Configurações salvas!','ok');
+  updateConfigPreview();
+}
+
+// ═══════════════════════════════════════
+// PAINEL IA
+// ═══════════════════════════════════════
+
+async function gerarResumoProntuario(){
+  if(!pacAtual)return;
+  const p=pacAtual;
+  const pacSess=sess.filter(s=>s.pacId===p.id).sort((a,b)=>a.data.localeCompare(b.data));
+  if(!pacSess.length)return;
+  document.getElementById('pron-ia-hint').style.display='none';
+  document.getElementById('pron-ia-loading').style.display='flex';
+  document.getElementById('pron-ia-resumo').style.display='none';
+  const historico=pacSess.map(s=>'['+s.data+'-'+s.tipoSessao+']: '+s.texto+(s.resumoIA?' IA:'+s.resumoIA:'')).join(' | ').substring(0,3000);
+  const prompt='Analise TODAS as sessoes de '+p.nome+'. Gere VISAO 360: 1.Principais demandas 2.Evolucao observada 3.Temas recorrentes 4.Objetivos terapeuticos 5.Pontos de atencao 6.Recomendacoes. Abordagem:'+(p.abordagem||'nao informada')+' Total:'+pacSess.length+' sessoes. Historico:'+historico;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
+    const d=await r.json();
+    const txt=d.content?.map(i=>i.text||'').join('')||'';
+    document.getElementById('pron-ia-loading').style.display='none';
+    document.getElementById('pron-ia-resumo').style.display='block';
+    document.getElementById('pron-ia-resumo').textContent=txt;
+  }catch(e){
+    document.getElementById('pron-ia-loading').style.display='none';
+    document.getElementById('pron-ia-hint').style.display='block';
+    document.getElementById('pron-ia-hint').textContent='Erro ao conectar com a IA. Verifique sua internet.';
+    document.getElementById('pron-ia-hint').style.color='rgba(255,100,100,0.9)';
+  }
+}
+
+function abrirIAPaciente(){
+  goSc('ia-painel');
+  setTimeout(()=>{
+    if(pacAtual){
+      document.getElementById('ia-pac-sel').value=pacAtual.id;
+      renderIAPainel();
+    }
+  },100);
+}
+
+function initIAPainel(){
+  const sel=document.getElementById('ia-pac-sel');
+  sel.innerHTML=pacs.length?pacs.map(p=>'<option value="'+p.id+'">'+p.nome+'</option>').join(''):'<option>Sem pacientes</option>';
+  renderIAPainel();
+}
+
+function renderIAPainel(){
+  const pacId=document.getElementById('ia-pac-sel').value;
+  const pac=pacs.find(p=>p.id===pacId);
+  if(!pac){return;}
+
+  const pacSess=sess.filter(s=>s.pacId===pacId).sort((a,b)=>a.data.localeCompare(b.data));
+  const nPresencial=pacSess.filter(s=>s.tipoSessao==='presencial').length;
+  const nFamiliar=pacSess.filter(s=>s.tipoSessao==='familiar').length;
+  const nOnline=pacSess.filter(s=>s.tipoSessao==='online').length;
+  const pago=pags.filter(pg=>pg.pacId===pacId&&pg.status==='pago').reduce((a,pg)=>a+(+pg.val||0),0);
+
+  // Show cards
+  document.getElementById('ia-resumo-card').style.display='block';
+  document.getElementById('ia-stats-card').style.display='block';
+  document.getElementById('ia-timeline-card').style.display='block';
+  document.getElementById('ia-temas-card').style.display='block';
+
+  // Reset IA results
+  document.getElementById('ia-resumo-res').style.display='none';
+  document.getElementById('ia-temas-res').style.display='none';
+  document.getElementById('ia-resumo-hint').style.display='block';
+
+  // Stats
+  const nasc=pac.nascimento?new Date(pac.nascimento+'T12:00'):'';
+  const idade=nasc?new Date().getFullYear()-nasc.getFullYear():'?';
+  document.getElementById('ia-stats').innerHTML=
+    '<div class="stat"><div class="stat-ico">🏥</div><div class="stat-val">'+nPresencial+'</div><div class="stat-lbl">Presenciais</div></div>'+
+    '<div class="stat"><div class="stat-ico">👨‍👩‍👧</div><div class="stat-val">'+nFamiliar+'</div><div class="stat-lbl">Familiares</div></div>'+
+    '<div class="stat"><div class="stat-ico">💻</div><div class="stat-val">'+nOnline+'</div><div class="stat-lbl">Online</div></div>'+
+    '<div class="stat"><div class="stat-ico">💰</div><div class="stat-val">R$'+pago+'</div><div class="stat-lbl">Total pago</div></div>';
+
+  // Timeline
+  const tl=document.getElementById('ia-timeline');
+  if(!pacSess.length){tl.innerHTML='<div class="empty-state"><span class="empty-icon">📈</span><span class="empty-text">Nenhuma sessão registrada ainda</span></div>';return;}
+  tl.innerHTML='<div style="position:relative;padding-left:20px;border-left:2px solid var(--pp-l)">'+
+    pacSess.slice(-8).map(s=>{
+      const tipos={presencial:{icon:'🏥',color:'var(--pp)'},familiar:{icon:'👨‍👩‍👧',color:'var(--gr)'},online:{icon:'💻',color:'var(--bl)'}};
+      const t=tipos[s.tipoSessao]||tipos.presencial;
+      return '<div style="position:relative;margin-bottom:16px">'+
+        '<div style="position:absolute;left:-26px;top:2px;width:10px;height:10px;border-radius:50%;background:'+t.color+';border:2px solid white;box-shadow:0 0 0 2px '+t.color+'"></div>'+
+        '<div style="font-size:11px;color:'+t.color+';font-weight:600;margin-bottom:3px">'+t.icon+' '+new Date(s.data+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'})+'</div>'+
+        '<div style="font-size:13px;color:var(--mt);line-height:1.5">'+s.texto.substring(0,120)+(s.texto.length>120?'...':'')+'</div>'+
+        (s.resumoIA?'<div style="margin-top:6px;font-size:12px;color:var(--pp-d);background:var(--pp-l);padding:8px;border-radius:8px">🤖 '+s.resumoIA.substring(0,100)+'...</div>':'')+
+      '</div>';
+    }).join('')+
+  '</div>';
+}
+
+async function gerarResumoPac(){
+  const pacId=document.getElementById('ia-pac-sel').value;
+  const pac=pacs.find(p=>p.id===pacId)||{nome:'Paciente',abordagem:'',obs:''};
+  const pacSess=sess.filter(s=>s.pacId===pacId).sort((a,b)=>b.data.localeCompare(a.data));
+  if(!pacSess.length){toast('Nenhuma sessão registrada para analisar.','err');return;}
+  document.getElementById('ia-resumo-hint').style.display='none';
+  const historico=pacSess.map(s=>'['+s.data+' - '+s.tipoSessao+']: '+s.texto+(s.resumoIA?' | Resumo: '+s.resumoIA:'')).join(' || ');
+  const prompt='Você é um psicólogo experiente. Analise TODO o histórico clínico do paciente '+pac.nome+' e gere um RESUMO CLÍNICO GERAL completo com: (1) Principais demandas e queixas, (2) Evolução observada ao longo do tempo, (3) Temas recorrentes nas sessões, (4) Principais intervenções realizadas, (5) Estado atual do paciente, (6) Observações clínicas relevantes. Abordagem: '+(pac.abordagem||'não informada')+'. Histórico completo: '+historico.substring(0,4000);
+  await callIA(prompt,'ia-resumo-ld','ia-resumo-res',null);
+}
+
+async function gerarTemas(){
+  const pacId=document.getElementById('ia-pac-sel').value;
+  const pac=pacs.find(p=>p.id===pacId)||{nome:'Paciente'};
+  const pacSess=sess.filter(s=>s.pacId===pacId);
+  if(!pacSess.length){toast('Nenhuma sessão para analisar.','err');return;}
+  const historico=pacSess.map(s=>s.texto+(s.resumoIA?' '+s.resumoIA:'')).join(' | ');
+  const prompt='Analise as sessões do paciente '+pac.nome+' e identifique: (1) Os 5 principais temas recorrentes com frequência estimada, (2) Padrões comportamentais observados, (3) Evolução emocional ao longo do tratamento, (4) Pontos de atenção clínica, (5) Recomendações para próximas sessões. Dados: '+historico.substring(0,3000);
+  await callIA(prompt,'ia-temas-ld','ia-temas-res',null);
+}
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+function toast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+(type||'ok');t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+// ═══════════════════════════════════════
+// AUTO LOGIN
+// ═══════════════════════════════════════
+window.addEventListener('load',async()=>{
+  initSupa();
+  if(useCloud){
+    try{
+      const{data:{session}}=await supa.auth.getSession();
+      if(session){uid=session.user.id;S.set('user',{email:session.user.email,nome:session.user.email.split('@')[0].replace(/[._]/g,' '),uid});await entrarApp();return;}
+    }catch{}
+  }
+  const user=S.get('user');
+  if(user){uid=user.uid||'local_'+user.email.replace(/[^a-z0-9]/gi,'_');await entrarApp();}
+});
+
+if('serviceWorker'in navigator){
+  navigator.serviceWorker.register('/sw.js')
+    .then(reg=>{ console.log('SW registered'); })
+    .catch(e=>{ console.log('SW failed:', e); });
+}
+// Handle app visibility change - re-init if needed
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&uid){
+    // Refresh data when app comes back to foreground
+    loadData().then(()=>{
+      const activeScreen=document.querySelector('.screen.active');
+      if(activeScreen){
+        const name=activeScreen.id.replace('sc-','');
+        if(name==='home')renderHome();
+        if(name==='financeiro')renderFin();
+      }
+    }).catch(()=>{});
+  }
+});
+
+// Config preview live update
+['cfg-nome','cfg-crp','cfg-esp','cfg-clinica','cfg-tel'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('input',updateConfigPreview);
+});
+</script>
+</body>
+</html>
