@@ -1928,35 +1928,45 @@ function exportarPDF(){
 // ═══════════════════════════════════════
 // IA API
 // ═══════════════════════════════════════
-async function callIA(prompt,ldId,resId,actId){
+// Edge Function URL - proxy seguro para a IA
+const IA_URL='https://ctxwjmwcswlelkuuqkjs.supabase.co/functions/v1/smooth-endpoint';
+
+async function callIA(prompt,ldId,resId,actId,maxTokens=1500){
   const ld=document.getElementById(ldId),res=document.getElementById(resId);
   if(!ld||!res)return;
   ld.style.display='flex';res.style.display='none';
   if(actId){const a=document.getElementById(actId);if(a)a.style.display='none';}
   try{
     const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),30000);
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
+    const timeout=setTimeout(()=>controller.abort(),45000);
+    const r=await fetch(IA_URL,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]}),
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+SUPA_KEY
+      },
+      body:JSON.stringify({prompt,max_tokens:maxTokens}),
       signal:controller.signal
     });
     clearTimeout(timeout);
-    if(!r.ok){throw new Error('HTTP '+r.status);}
+    if(!r.ok){
+      const errTxt=await r.text().catch(()=>'');
+      throw new Error('HTTP '+r.status+': '+errTxt.substring(0,100));
+    }
     const d=await r.json();
-    if(d.error){throw new Error(d.error.message||'API error');}
+    if(d.error){throw new Error(d.error.message||JSON.stringify(d.error));}
     const txt=d.content?.map(i=>i.text||'').join('')||'Não foi possível gerar.';
     ld.style.display='none';res.style.display='block';res.textContent=txt;
     if(actId){const a=document.getElementById(actId);if(a)a.style.display='flex';}
   }catch(e){
     ld.style.display='none';res.style.display='block';
     if(e.name==='AbortError'){
-      res.textContent='⏱️ Tempo esgotado. A IA demorou para responder. Tente novamente.';
+      res.textContent='⏱️ Tempo esgotado. Tente novamente.';
     }else if(!navigator.onLine){
-      res.textContent='📵 Sem internet. Verifique sua conexão e tente novamente.';
+      res.textContent='📵 Sem internet. Verifique sua conexão.';
     }else{
-      res.textContent='⚠️ Erro ao conectar com a IA. Tente novamente em instantes.';
+      res.textContent='⚠️ Erro: '+e.message+'. Tente novamente.';
+      console.error('IA error:',e);
     }
   }
 }
