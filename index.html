@@ -1943,7 +1943,7 @@ async function callIA(prompt,ldId,resId,actId,maxTokens=1500){
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'Authorization':'Bearer '+SUPA_KEY
+        'apikey':SUPA_KEY
       },
       body:JSON.stringify({prompt,max_tokens:maxTokens}),
       signal:controller.signal
