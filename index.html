@@ -190,7 +190,7 @@ select.fi{-webkit-appearance:none;appearance:none}
 .toast.info{background:var(--bl)}
 
 /* ── NAV ── */
-.bot-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--bd);display:none;z-index:200;padding:6px 0 4px;box-shadow:0 -4px 16px rgba(0,0,0,0.06)}
+.bot-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--bd);display:none;z-index:200;padding:6px 0 4px;box-shadow:0 -4px 16px rgba(0,0,0,0.06);overflow-x:auto;-webkit-overflow-scrolling:touch}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--mt);font-size:10px;font-family:'DM Sans',sans-serif;padding:5px 0;-webkit-appearance:none}
 .nb svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .nb.active{color:var(--pp)}
@@ -488,6 +488,9 @@ button:focus{outline:2px solid var(--pp);outline-offset:2px}
     </div>
   </div>
   <div class="content">
+    <button class="btn btn-pp btn-full" onclick="goSc('cadastro')" style="margin-bottom:14px">
+      👤 Novo Paciente
+    </button>
     <div class="card" style="padding:12px 14px;margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;background:var(--sf);border-radius:10px;padding:9px 12px">
         <span style="color:var(--mt);font-size:18px">🔍</span>
@@ -923,11 +926,12 @@ button:focus{outline:2px solid var(--pp);outline-offset:2px}
 <!-- NAV -->
 <div class="bot-nav" id="bot-nav" style="display:none">
   <button class="nb active" onclick="goSc('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>Início</button>
-  <button class="nb" onclick="goSc('pacientes')"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Pacientes</button>
-  <button class="nb" onclick="goSc('sessao')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Sessão</button>
-  <button class="nb" onclick="goSc('agenda')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Agenda</button>
-  <button class="nb" onclick="goSc('financeiro')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Financeiro</button>
+  <button class="nb" onclick="goSc('pacientes')"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Pacientes</button>
+  <button class="nb" onclick="goSc('sessao')"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Sessão</button>
+  <button class="nb" onclick="goSc('documentos')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Docs</button>
+  <button class="nb" onclick="goSc('financeiro')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Finanças</button>
   <button class="nb" onclick="goSc('ia-painel')"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3.5-2.5 6.5-6 7v2H9v-2c-3.5-.5-6-3.5-6-7a7 7 0 017-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>IA</button>
+  <button class="nb" onclick="goSc('config')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33"/></svg>Config</button>
 </div>
 
 <!-- MODAL CONSULTA -->
@@ -1117,7 +1121,7 @@ function goSc(name){
   document.querySelectorAll('.s-btn').forEach(b=>b.classList.remove('active'));
   // Activate sidebar button
   const sMap={home:0,pacientes:1,sessao:2,documentos:3,ia_painel:3,agenda:4,financeiro:5,config:6};
-  const map={home:0,pacientes:1,prontuario:1,cadastro:1,sessao:2,documentos:2,agenda:3,financeiro:4,'ia-painel':5,config:5};
+  const map={home:0,pacientes:1,prontuario:1,cadastro:1,sessao:2,documentos:3,agenda:3,financeiro:4,'ia-painel':5,config:6};
   const idx=map[name];
   if(idx!==undefined)document.querySelectorAll('.nb')[idx]?.classList.add('active');
   window.scrollTo(0,0);
@@ -1943,6 +1947,7 @@ async function callIA(prompt,ldId,resId,actId,maxTokens=1500){
       method:'POST',
       headers:{
         'Content-Type':'application/json',
+        'Authorization':'Bearer '+SUPA_KEY,
         'apikey':SUPA_KEY
       },
       body:JSON.stringify({prompt,max_tokens:maxTokens}),
@@ -1965,7 +1970,15 @@ async function callIA(prompt,ldId,resId,actId,maxTokens=1500){
     }else if(!navigator.onLine){
       res.textContent='📵 Sem internet. Verifique sua conexão.';
     }else{
-      res.textContent='⚠️ Erro: '+e.message+'. Tente novamente.';
+      const msg=e.message||'';
+      if(msg.includes('401')||msg.includes('JWT')||msg.includes('UNAUTHORIZED')){
+        res.textContent='🔐 Erro de autenticação na IA. Verifique a configuração da Edge Function.';
+      }else if(msg.includes('404')){
+        res.textContent='❌ Edge Function não encontrada. Verifique o deploy no Supabase.';
+      }else{
+        res.textContent='⚠️ Erro: '+msg+'. Tente novamente.';
+      }
+      console.error('IA error details:',e);
       console.error('IA error:',e);
     }
   }
