@@ -572,7 +572,7 @@ select.fi{-webkit-appearance:none;appearance:none}
 // ═══ CONFIG ═══
 const SUPA_URL='https://ctxwjmwcswlelkuuqkjs.supabase.co';
 const SUPA_KEY='sb_publishable_CFWupJGyYSiqrVsvvm2E3w_xewuOZg2';
-const IA_URL='https://ctxwjmwcswlelkuuqkjs.supabase.co/functions/v1/smooth-endpoint';
+const GROQ_KEY='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';
 
 // ═══ STORAGE ═══
 const S={
@@ -1313,27 +1313,34 @@ async function callIA(prompt,maxTokens=1200){
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),45000);
   try{
-    const r=await fetch(IA_URL,{
+    const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPA_KEY,'apikey':SUPA_KEY},
-      body:JSON.stringify({prompt,max_tokens:maxTokens}),
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+GROQ_KEY
+      },
+      body:JSON.stringify({
+        model:'llama-3.3-70b-versatile',
+        max_tokens:maxTokens,
+        messages:[{role:'user',content:prompt}]
+      }),
       signal:controller.signal
     });
     clearTimeout(timeout);
     if(!r.ok){
       const txt=await r.text().catch(()=>'');
-      throw new Error('Servidor retornou '+r.status+'. '+txt.substring(0,100));
+      throw new Error('Erro '+r.status+': '+txt.substring(0,150));
     }
     const d=await r.json();
     if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));
-    const txt=d.content?.map(i=>i.text||'').join('');
+    const txt=d.choices?.[0]?.message?.content;
     if(!txt)throw new Error('Resposta vazia da IA');
     return txt;
   }catch(e){
     clearTimeout(timeout);
     if(e.name==='AbortError')throw new Error('⏱️ Tempo esgotado. Tente novamente.');
     if(!navigator.onLine)throw new Error('📵 Sem internet.');
-    throw new Error('⚠️ '+e.message);
+    throw new Error(e.message);
   }
 }
 
