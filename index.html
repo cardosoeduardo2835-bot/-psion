@@ -646,13 +646,31 @@ async function doLogin(){
   btn.textContent='Entrando...';btn.disabled=true;
   try{
     if(supa){
-      let{data,error}=await supa.auth.signInWithPassword({email,password:senha});
-      if(error){
-        const res=await supa.auth.signUp({email,password:senha});
-        if(res.error){err.style.display='block';document.getElementById('l-msg').textContent=res.error.message;btn.textContent='Entrar no PsiOn';btn.disabled=false;return;}
-        data=res.data;
+      // Add timeout to Supabase auth
+      const authPromise=supa.auth.signInWithPassword({email,password:senha});
+      const timeoutPromise=new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),8000));
+      let data,error;
+      try{
+        const result=await Promise.race([authPromise,timeoutPromise]);
+        data=result.data;error=result.error;
+      }catch(e){
+        // Timeout or error - use local auth
+        uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
+        S.set('user',{email,nome:email.split('@')[0].replace(/[._]/g,' '),uid});
+        await entrarApp();
+        return;
       }
-      uid=data.user.id;
+      if(error){
+        try{
+          const res=await supa.auth.signUp({email,password:senha});
+          if(res.error){err.style.display='block';document.getElementById('l-msg').textContent=res.error.message;btn.textContent='Entrar no PsiOn';btn.disabled=false;return;}
+          uid=res.data.user.id;
+        }catch(e2){
+          uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
+        }
+      }else{
+        uid=data.user.id;
+      }
     }else{
       uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
     }
@@ -665,7 +683,11 @@ async function doLogin(){
   }
   btn.textContent='Entrar no PsiOn';btn.disabled=false;
 }
-function doDemo(){document.getElementById('l-email').value='demo@psion.com.br';document.getElementById('l-senha').value='psion2025';doLogin();}
+function doDemo(){
+  uid='demo_user';
+  S.set('user',{email:'demo@psion.com.br',nome:'Dra. Demo',uid:'demo_user'});
+  entrarApp();
+}
 async function entrarApp(){
   document.getElementById('login').style.display='none';
   document.getElementById('app').style.display='block';
