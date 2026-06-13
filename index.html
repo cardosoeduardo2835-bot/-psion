@@ -571,6 +571,7 @@ select.fi{-webkit-appearance:none;appearance:none}
 
 <script>
 
+
 // ═══ CONFIG ═══
 const SUPA_URL='https://ctxwjmwcswlelkuuqkjs.supabase.co';
 const SUPA_KEY='sb_publishable_CFWupJGyYSiqrVsvvm2E3w_xewuOZg2';
@@ -641,75 +642,57 @@ async function doLogin(){
   const email=document.getElementById('l-email').value.trim();
   const senha=document.getElementById('l-senha').value;
   const err=document.getElementById('l-err');
-  if(!email||!senha){err.style.display='block';document.getElementById('l-msg').textContent='Preencha e-mail e senha.';return;}
+  if(!email||!senha){
+    err.style.display='block';
+    document.getElementById('l-msg').textContent='Preencha e-mail e senha.';
+    return;
+  }
   err.style.display='none';
   const btn=document.getElementById('l-btn');
   btn.textContent='Entrando...';btn.disabled=true;
-  // Small delay for UX
-  await new Promise(r=>setTimeout(r,100));
-  try{
-    if(supa){
-      // Add timeout to Supabase auth
-      const authPromise=supa.auth.signInWithPassword({email,password:senha});
-      const timeoutPromise=new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),8000));
-      let data,error;
-      try{
-        const result=await Promise.race([authPromise,timeoutPromise]);
-        data=result.data;error=result.error;
-      }catch(e){
-        // Timeout or error - use local auth
-        uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
-        S.set('user',{email,nome:email.split('@')[0].replace(/[._]/g,' '),uid});
-        await entrarApp();
-        return;
-      }
-      if(error){
-        try{
-          const res=await supa.auth.signUp({email,password:senha});
-          if(res.error){err.style.display='block';document.getElementById('l-msg').textContent=res.error.message;btn.textContent='Entrar no PsiOn';btn.disabled=false;return;}
-          uid=res.data.user.id;
-        }catch(e2){
-          uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
-        }
-      }else{
+  
+  // Try Supabase with short timeout
+  if(supa){
+    try{
+      const p=supa.auth.signInWithPassword({email,password:senha});
+      const t=new Promise(r=>setTimeout(()=>r({data:null,error:'timeout'}),5000));
+      const{data,error}=await Promise.race([p,t]);
+      if(!error&&data&&data.user){
         uid=data.user.id;
+        S.set('user',{email,nome:email.split('@')[0].replace(/[._]/g,' '),uid});
+        btn.textContent='Entrar no PsiOn';btn.disabled=false;
+        entrar();return;
       }
-    }else{
-      uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
-    }
-    S.set('user',{email,nome:email.split('@')[0].replace(/[._]/g,' '),uid});
-    await entrarApp();
-  }catch(e){
-    uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
-    S.set('user',{email,nome:email.split('@')[0].replace(/[._]/g,' '),uid});
-    await entrarApp();
+    }catch(e){}
   }
+  
+  // Fallback: local login
+  uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
+  S.set('user',{email,nome:email.split('@')[0].replace(/[._]/g,' '),uid});
   btn.textContent='Entrar no PsiOn';btn.disabled=false;
+  entrar();
 }
+
 function doDemo(){
-  // Clear any existing session
-  S.del('user');
   uid='demo';
   S.set('user',{email:'demo@psion.com.br',nome:'Dra. Demo',uid:'demo'});
+  entrar();
+}
+
+function entrar(){
   document.getElementById('login').style.display='none';
   document.getElementById('app').style.display='block';
   if(window.innerWidth<769){document.getElementById('nav').style.display='flex';}
   else{document.getElementById('sidebar').style.display='flex';}
   loadLocal();
   initApp();
-}
-async function entrarApp(){
-  document.getElementById('login').style.display='none';
-  document.getElementById('app').style.display='block';
-  if(window.innerWidth<769){document.getElementById('nav').style.display='flex';}
-  else{document.getElementById('sidebar').style.display='flex';}
-  loadLocal();
-  if(supa&&uid&&!uid.startsWith('local_')){
-    const ok=await sbLoad();
-    if(!ok)toast('Usando dados locais','info');
+  if(supa&&uid&&!uid.startsWith('local_')&&uid!=='demo'){
+    sbLoad().catch(()=>{});
   }
-  initApp();
 }
+
+async function entrarApp(){entrar();}
+
 async function fazerLogout(){
   if(!confirm('Sair da conta?'))return;
   if(supa)await supa.auth.signOut().catch(()=>{});
@@ -1410,28 +1393,19 @@ function toast(msg,type){
 
 // ═══ INICIALIZAÇÃO ═══
 window.addEventListener('load',async()=>{
-  await initSupa();
-  // Try Supabase session with timeout
-  if(supa){
-    try{
-      const sessionPromise=supa.auth.getSession();
-      const timeout=new Promise(r=>setTimeout(r,5000));
-      const result=await Promise.race([sessionPromise,timeout]);
-      if(result&&result.data&&result.data.session){
-        const session=result.data.session;
-        uid=session.user.id;
-        S.set('user',{email:session.user.email,nome:session.user.email.split('@')[0].replace(/[._]/g,' '),uid});
-        await entrarApp();return;
-      }
-    }catch(e){console.log('Session:',e);}
-  }
-  // Try local session
+  // Simple: just show login screen, no auto-login complexity
+  try{await initSupa();}catch(e){}
+  // Check for existing local session only
   const user=S.get('user');
   if(user&&user.uid){
     uid=user.uid;
-    await entrarApp();
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').style.display='block';
+    if(window.innerWidth<769){document.getElementById('nav').style.display='flex';}
+    else{document.getElementById('sidebar').style.display='flex';}
+    loadLocal();
+    initApp();
   }
-  // Else show login
 });
 
 // Service Worker
@@ -1448,6 +1422,7 @@ document.addEventListener('visibilitychange',()=>{
     }).catch(()=>{});
   }
 });
+
 
 </script>
 </body>
