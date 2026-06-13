@@ -570,6 +570,7 @@ select.fi{-webkit-appearance:none;appearance:none}
 <div class="toast" id="toast"></div>
 
 <script>
+
 // ═══ CONFIG ═══
 const SUPA_URL='https://ctxwjmwcswlelkuuqkjs.supabase.co';
 const SUPA_KEY='sb_publishable_CFWupJGyYSiqrVsvvm2E3w_xewuOZg2';
@@ -644,6 +645,8 @@ async function doLogin(){
   err.style.display='none';
   const btn=document.getElementById('l-btn');
   btn.textContent='Entrando...';btn.disabled=true;
+  // Small delay for UX
+  await new Promise(r=>setTimeout(r,100));
   try{
     if(supa){
       // Add timeout to Supabase auth
@@ -684,9 +687,16 @@ async function doLogin(){
   btn.textContent='Entrar no PsiOn';btn.disabled=false;
 }
 function doDemo(){
-  uid='demo_user';
-  S.set('user',{email:'demo@psion.com.br',nome:'Dra. Demo',uid:'demo_user'});
-  entrarApp();
+  // Clear any existing session
+  S.del('user');
+  uid='demo';
+  S.set('user',{email:'demo@psion.com.br',nome:'Dra. Demo',uid:'demo'});
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='block';
+  if(window.innerWidth<769){document.getElementById('nav').style.display='flex';}
+  else{document.getElementById('sidebar').style.display='flex';}
+  loadLocal();
+  initApp();
 }
 async function entrarApp(){
   document.getElementById('login').style.display='none';
@@ -1401,19 +1411,27 @@ function toast(msg,type){
 // ═══ INICIALIZAÇÃO ═══
 window.addEventListener('load',async()=>{
   await initSupa();
-  // Auto login
+  // Try Supabase session with timeout
   if(supa){
     try{
-      const{data:{session}}=await supa.auth.getSession();
-      if(session){
+      const sessionPromise=supa.auth.getSession();
+      const timeout=new Promise(r=>setTimeout(r,5000));
+      const result=await Promise.race([sessionPromise,timeout]);
+      if(result&&result.data&&result.data.session){
+        const session=result.data.session;
         uid=session.user.id;
         S.set('user',{email:session.user.email,nome:session.user.email.split('@')[0].replace(/[._]/g,' '),uid});
         await entrarApp();return;
       }
-    }catch(e){console.log('Session check failed:',e);}
+    }catch(e){console.log('Session:',e);}
   }
+  // Try local session
   const user=S.get('user');
-  if(user){uid=user.uid||'local_'+user.email?.replace(/[^a-z0-9]/gi,'_');await entrarApp();}
+  if(user&&user.uid){
+    uid=user.uid;
+    await entrarApp();
+  }
+  // Else show login
 });
 
 // Service Worker
@@ -1430,6 +1448,7 @@ document.addEventListener('visibilitychange',()=>{
     }).catch(()=>{});
   }
 });
+
 </script>
 </body>
 </html>    const PROMPTS={
