@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PsiOn</title>
+<title>PsiOn 2025</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#534AB7">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -571,17 +571,6 @@ select.fi{-webkit-appearance:none;appearance:none}
 
 <script>
 
-
-// ═══ FORCE CLEAR SERVICE WORKER CACHE ═══
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(regs=>{
-    regs.forEach(r=>r.unregister());
-  });
-}
-// Clear old caches
-if('caches' in window){
-  caches.keys().then(keys=>keys.forEach(k=>caches.delete(k)));
-}
 
 // ═══ CONFIG ═══
 const SUPA_URL='https://ctxwjmwcswlelkuuqkjs.supabase.co';
@@ -1389,7 +1378,10 @@ window.addEventListener('load',function(){
   }
 });
 
-// Service Worker disabled to prevent caching issues
+// Service Worker
+if('serviceWorker'in navigator){
+  
+}
 
 // Visibility change - reload data when app comes back
 document.addEventListener('visibilitychange',()=>{
@@ -1443,7 +1435,7 @@ document.addEventListener('visibilitychange',()=>{
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PsiOn</title>
+<title>PsiOn 2025</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#534AB7">
 <meta name="apple-mobile-web-app-capable" content="yes">
