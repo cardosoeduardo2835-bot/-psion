@@ -572,6 +572,17 @@ select.fi{-webkit-appearance:none;appearance:none}
 <script>
 
 
+// ═══ FORCE CLEAR SERVICE WORKER CACHE ═══
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(r=>r.unregister());
+  });
+}
+// Clear old caches
+if('caches' in window){
+  caches.keys().then(keys=>keys.forEach(k=>caches.delete(k)));
+}
+
 // ═══ CONFIG ═══
 const SUPA_URL='https://ctxwjmwcswlelkuuqkjs.supabase.co';
 const SUPA_KEY='sb_publishable_CFWupJGyYSiqrVsvvm2E3w_xewuOZg2';
@@ -1378,10 +1389,7 @@ window.addEventListener('load',function(){
   }
 });
 
-// Service Worker
-if('serviceWorker'in navigator){
-  navigator.serviceWorker.register('/sw.js').catch(()=>{});
-}
+// Service Worker disabled to prevent caching issues
 
 // Visibility change - reload data when app comes back
 document.addEventListener('visibilitychange',()=>{
