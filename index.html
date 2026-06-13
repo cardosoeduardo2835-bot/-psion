@@ -599,14 +599,12 @@ function loadLocal(){pacs=S.get('pacs')||[];cons=S.get('cons')||[];sess=S.get('s
 
 // ═══ SUPABASE ═══
 let supa=null;
-async function initSupa(){
+function initSupa(){
   try{
     if(window.supabase){
       supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
-      return true;
     }
   }catch(e){}
-  return false;
 }
 
 async function sbLoad(){
@@ -638,38 +636,18 @@ async function sbUpd(t,id,obj){
 }
 
 // ═══ LOGIN ═══
-async function doLogin(){
-  const email=document.getElementById('l-email').value.trim();
-  const senha=document.getElementById('l-senha').value;
-  const err=document.getElementById('l-err');
+function doLogin(){
+  var email=document.getElementById('l-email').value.trim();
+  var senha=document.getElementById('l-senha').value;
+  var err=document.getElementById('l-err');
   if(!email||!senha){
     err.style.display='block';
     document.getElementById('l-msg').textContent='Preencha e-mail e senha.';
     return;
   }
   err.style.display='none';
-  const btn=document.getElementById('l-btn');
-  btn.textContent='Entrando...';btn.disabled=true;
-  
-  // Try Supabase with short timeout
-  if(supa){
-    try{
-      const p=supa.auth.signInWithPassword({email,password:senha});
-      const t=new Promise(r=>setTimeout(()=>r({data:null,error:'timeout'}),5000));
-      const{data,error}=await Promise.race([p,t]);
-      if(!error&&data&&data.user){
-        uid=data.user.id;
-        S.set('user',{email,nome:email.split('@')[0].replace(/[._]/g,' '),uid});
-        btn.textContent='Entrar no PsiOn';btn.disabled=false;
-        entrar();return;
-      }
-    }catch(e){}
-  }
-  
-  // Fallback: local login
   uid='local_'+email.replace(/[^a-z0-9]/gi,'_');
-  S.set('user',{email,nome:email.split('@')[0].replace(/[._]/g,' '),uid});
-  btn.textContent='Entrar no PsiOn';btn.disabled=false;
+  S.set('user',{email:email,nome:email.split('@')[0].replace(/[._]/g,' '),uid:uid});
   entrar();
 }
 
@@ -1392,19 +1370,11 @@ function toast(msg,type){
 }
 
 // ═══ INICIALIZAÇÃO ═══
-window.addEventListener('load',async()=>{
-  // Simple: just show login screen, no auto-login complexity
-  try{await initSupa();}catch(e){}
-  // Check for existing local session only
-  const user=S.get('user');
+window.addEventListener('load',function(){
+  var user=S.get('user');
   if(user&&user.uid){
     uid=user.uid;
-    document.getElementById('login').style.display='none';
-    document.getElementById('app').style.display='block';
-    if(window.innerWidth<769){document.getElementById('nav').style.display='flex';}
-    else{document.getElementById('sidebar').style.display='flex';}
-    loadLocal();
-    initApp();
+    entrar();
   }
 });
 
