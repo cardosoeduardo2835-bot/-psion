@@ -323,6 +323,7 @@ select.fi{-webkit-appearance:none}
     </div>
     <div class="rec-status" id="rec-status"></div>
     <div class="transcr" id="transcr"></div>
+
   </div>
   <div class="card">
     <div class="card-t">Anotações manuais</div>
@@ -513,7 +514,7 @@ select.fi{-webkit-appearance:none}
 <script>
 var GROQ='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';
 var pacs=[],cons=[],sess=[],pags=[],pac=null,tipo='presencial';
-var isRec=false,sr=null,txt='',ri=null,rs=0,wl=null;
+var isRec=false,sr=null,txt='',ri=null,rs=0,wl=null,mediaRec=null,audioChunks=[];
 var calM=new Date().getMonth(),calY=new Date().getFullYear();
 var dHist=[],dUsos={};
 var uid=null;
@@ -789,7 +790,11 @@ function gerarIA(t){
 function toggleRec(){if(isRec)pararRec();else iniciarRec();}
 function iniciarRec(){
   if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){
-    toast('Use Chrome para gravação automática.','err');return;
+    document.getElementById('rec-fallback').style.display='block';
+    document.getElementById('rec-btn').style.display='none';
+    document.getElementById('rec-limpar').style.display='none';
+    showRecSt('📝 Transcrição automática não disponível neste navegador. Use o microfone do teclado no campo abaixo!');
+    return;
   }
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(){
     if('wakeLock'in navigator){navigator.wakeLock.request('screen').then(function(w){wl=w;}).catch(function(){});}
