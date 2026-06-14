@@ -512,9 +512,10 @@ select.fi{-webkit-appearance:none}
 <div class="toast" id="toast"></div>
 
 <script>
+
 var GROQ='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';
 var pacs=[],cons=[],sess=[],pags=[],pac=null,tipo='presencial';
-var isRec=false,sr=null,txt='',ri=null,rs=0,wl=null,mediaRec=null,audioChunks=[];
+var isRec=false,sr=null,txt='',wl=null;
 var calM=new Date().getMonth(),calY=new Date().getFullYear();
 var dHist=[],dUsos={};
 var uid=null;
@@ -787,414 +788,167 @@ function gerarIA(t){
 }
 
 // GRAVAÇÃO
-function toggleRec(){if(isRec)pararRec();else iniciarRec();}
-function iniciarRec(){
-  if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){
-    document.getElementById('rec-fallback').style.display='block';
-    document.getElementById('rec-btn').style.display='none';
-    document.getElementById('rec-limpar').style.display='none';
-    showRecSt('📝 Transcrição automática não disponível neste navegador. Use o microfone do teclado no campo abaixo!');
-    return;
-  }
-  navigator.mediaDevices.getUserMedia({audio:true}).then(function(){
-    if('wakeLock'in navigator){navigator.wakeLock.request('screen').then(function(w){wl=w;}).catch(function(){});}
-    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    sr=new SR();sr.lang='pt-BR';sr.continuous=true;sr.interimResults=true;
-    txt='';var restarts=0;
-    sr.onstart=function(){
-      isRec=true;rs=0;restarts=0;
-      document.getElementById('rec-timer').style.display='block';
-      document.getElementById('rec-pulse').style.display='inline-block';
-      document.getElementById('rec-btn').textContent='⏹ Parar gravação';
-      document.getElementById('rec-btn').style.background='#ef4444';
-      document.getElementById('rec-limpar').style.display='inline-block';
-      document.getElementById('transcr').style.display='block';
-      document.getElementById('transcr').innerHTML='<span style="color:var(--mt);font-style:italic">🎙️ Ouvindo...</span>';
-      showRecSt('🔴 Gravando ao vivo...');
-      ri=setInterval(function(){
-        rs++;
-        var m=String(Math.floor(rs/60)).padStart(2,'0'),s=String(rs%60).padStart(2,'0');
-        document.getElementById('rec-timer').textContent=m+':'+s;
-      },1000);
-    };
-    sr.onresult=function(e){
-      var interim='';
-      for(var i=e.resultIndex;i<e.results.length;i++){
-        if(e.results[i].isFinal)txt+=e.results[i][0].transcript+' ';
-        else interim+=e.results[i][0].transcript;
-      }
-      var box=document.getElementById('transcr');
-      box.innerHTML=txt+(interim?'<span style="color:var(--mt);font-style:italic">'+interim+'</span>':'');
-      box.scrollTop=box.scrollHeight;
-    };
-    sr.onerror=function(e){if(e.error==='no-speech'||e.error==='aborted')return;toast('Erro: '+e.error,'err');pararRec();};
-    sr.onend=function(){
-      if(isRec&&sr&&restarts<60){restarts++;try{sr.start();}catch(e){finalizarRec();}}
-      else finalizarRec();
-    };
-    sr.start();
-  }).catch(function(e){toast('Permita o microfone.','err');showRecSt('⚠️ Permita o acesso ao microfone.');});
-}
-function pararRec(){
-  isRec=false;
-  if(sr){try{sr.abort();}catch(e){}sr=null;}
-  if(wl){try{wl.release();}catch(e){}wl=null;}
-  finalizarRec();
-}
-function finalizarRec(){
-  clearInterval(ri);
-  document.getElementById('rec-pulse').style.display='none';
-  document.getElementById('rec-btn').textContent='▶ Nova gravação';
-  document.getElementById('rec-btn').style.background='var(--pp)';
-  if(txt.trim()){
-    document.getElementById('transcr').innerHTML=txt;
-    var wc=txt.split(' ').filter(function(w){return w;}).length;
-    showRecSt('✅ Transcrição concluída ('+wc+' palavras).');
-    document.getElementById('sess-txt').value=txt.trim();
-  }else{showRecSt('⚠️ Nenhuma fala detectada.');}
-}
-function limparRec(){txt='';document.getElementById('transcr').innerHTML='';document.getElementById('rec-status').style.display='none';document.getElementById('sess-txt').value='';}
-function showRecSt(m){var el=document.getElementById('rec-status');el.style.display='block';el.textContent=m;}
+var recTimer=null,recSecs2=0,mediaRec2=null,audioChunks2=[],recStream=null;
 
-// DOCUMENTOS
-var DOCS=[
-  {id:'prontuario',nome:'Prontuário Psicológico',desc:'Histórico completo',icon:'📋',cat:'clinico'},
-  {id:'relatorio',nome:'Relatório Psicológico',desc:'Formal com evolução',icon:'📊',cat:'clinico'},
-  {id:'declaracao',nome:'Declaração Psicológica',desc:'Modelo rápido',icon:'📄',cat:'clinico'},
-  {id:'parecer',nome:'Parecer Psicológico',desc:'Análise técnica',icon:'🔍',cat:'clinico'},
-  {id:'alta',nome:'Alta Terapêutica',desc:'Conclusão do processo',icon:'✅',cat:'clinico'},
-  {id:'evolucao_mensal',nome:'Evolução Mensal',desc:'Resumo do mês',icon:'🗓️',cat:'clinico'},
-  {id:'atestado',nome:'Atestado Psicológico',desc:'Ausência/afastamento',icon:'📜',cat:'clinico'},
-  {id:'relatorio_judicial',nome:'Relatório para Justiça',desc:'Para processos judiciais',icon:'⚖️',cat:'juridico'},
-  {id:'laudo_judicial',nome:'Laudo Psicológico Judicial',desc:'Avaliação pericial',icon:'🏛️',cat:'juridico'},
-  {id:'relatorio_guarda',nome:'Relatório Vara de Família',desc:'Guarda, tutela, adoção',icon:'👨‍👩‍👧',cat:'juridico'},
-  {id:'relatorio_violencia',nome:'Relatório Violência/Proteção',desc:'Conselho Tutelar/CREAS',icon:'🛡️',cat:'juridico'},
-  {id:'declaracao_judicial',nome:'Declaração para Processo',desc:'Declaração formal ao juízo',icon:'📋',cat:'juridico'},
-  {id:'devolutiva',nome:'Devolutiva Psicológica',desc:'Para pais e escolas',icon:'💬',cat:'escolar'},
-  {id:'relatorio_escolar',nome:'Relatório Escolar',desc:'Para professores',icon:'🏫',cat:'escolar'},
-  {id:'relatorio_tea',nome:'Relatório TEA',desc:'Neurodiversidade',icon:'🧩',cat:'escolar'},
-  {id:'relatorio_tdah',nome:'Relatório TDAH',desc:'Para escola e médico',icon:'⚡',cat:'escolar'},
-  {id:'orientacao_familiar',nome:'Orientação Familiar',desc:'Para família e cuidadores',icon:'🏠',cat:'escolar'},
-  {id:'neuropediatra',nome:'Relatório Neuropediatra',desc:'Informações clínicas',icon:'🧠',cat:'medico'},
-  {id:'psiquiatra',nome:'Relatório Psiquiatra',desc:'Evolução e quadro',icon:'💊',cat:'medico'},
-  {id:'medico_geral',nome:'Relatório para Médico',desc:'Informações gerais',icon:'🩺',cat:'medico'},
-  {id:'fonoaudiologo',nome:'Relatório Fonoaudiólogo',desc:'Aspectos cognitivos',icon:'🗣️',cat:'medico'},
-  {id:'convenio',nome:'Relatório para Convênio',desc:'Para reembolso',icon:'💰',cat:'convenio'},
-  {id:'evolucao_convenio',nome:'Evolução para Convênio',desc:'Progresso ao plano',icon:'📈',cat:'convenio'},
-  {id:'encaminhamento',nome:'Encaminhamento',desc:'Para outro profissional',icon:'📨',cat:'encaminhamento'},
-  {id:'enc_caps',nome:'Encaminhamento CAPS',desc:'Saúde mental',icon:'🏥',cat:'encaminhamento'},
-  {id:'enc_assistencia',nome:'Encaminhamento Assist. Social',desc:'CRAS, CREAS',icon:'🏢',cat:'encaminhamento'},
-  {id:'relatorio_bpc',nome:'Relatório BPC/LOAS',desc:'Benefício continuado',icon:'💵',cat:'beneficios'},
-  {id:'relatorio_inss',nome:'Relatório para INSS',desc:'Afastamento/perícia',icon:'📑',cat:'beneficios'},
-];
-var CATS={clinico:'📋 Clínicos',juridico:'⚖️ Jurídico/Judicial',escolar:'🏫 Escolares',medico:'🩺 Médicos',convenio:'💰 Convênios',encaminhamento:'📤 Encaminhamentos',beneficios:'💵 Previdência'};
-var docAtual=null;
-
-function renderDocTela(){
-  var sel=document.getElementById('doc-pac');
-  var h='';
-  for(var i=0;i<pacs.length;i++){h+='<option value="'+pacs[i].id+'"'+(pac&&pac.id===pacs[i].id?' selected':'')+'>'+pacs[i].nome+'</option>';}
-  sel.innerHTML=h||'<option>Sem pacientes cadastrados</option>';
-  renderDocHist();
-}
-function renderDocHist(){
-  var el=document.getElementById('doc-hist');
-  if(!dHist.length){el.innerHTML='<div class="empty"><span class="empty-i">📄</span>Nenhum documento gerado ainda</div>';return;}
-  var h='';
-  for(var i=0;i<Math.min(dHist.length,8);i++){
-    var dh=dHist[i];
-    var p=findPac(dh.pacId)||{nome:dh.pacNome||'Paciente'};
-    var d=findDoc(dh.docId)||{icon:'📄',nome:dh.docId};
-    var dt=new Date(dh.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
-    h+='<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f3f3;cursor:pointer" onclick="verDocHist(\''+dh.id+'\')"><div style="width:34px;height:34px;background:var(--pp-l);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+d.icon+'</div><div style="flex:1"><div style="font-size:14px;font-weight:500">'+d.nome+'</div><div style="font-size:12px;color:var(--mt)">'+p.nome+' · '+dt+'</div></div><div style="font-size:12px;color:var(--pp);font-weight:500">Ver ›</div></div>';
-  }
-  el.innerHTML=h;
-}
-function findDoc(id){for(var i=0;i<DOCS.length;i++){if(DOCS[i].id===id)return DOCS[i];}return null;}
-function openDocModal(){
-  document.getElementById('doc-busca').value='';
-  filtrarDocs('');
-  document.getElementById('m-docs').style.display='flex';
-  setTimeout(function(){document.getElementById('m-docs').classList.add('open');},10);
-  setTimeout(function(){document.getElementById('doc-busca').focus();},300);
-}
-function closeDocModal(){
-  document.getElementById('m-docs').classList.remove('open');
-  setTimeout(function(){document.getElementById('m-docs').style.display='none';},200);
-}
-function filtrarDocs(q){
-  q=q.toLowerCase();
-  var f=[];
-  for(var i=0;i<DOCS.length;i++){
-    if(!q||DOCS[i].nome.toLowerCase().indexOf(q)>=0||DOCS[i].desc.toLowerCase().indexOf(q)>=0)f.push(DOCS[i]);
-  }
-  var el=document.getElementById('doc-lista');
-  if(!f.length){el.innerHTML='<div class="empty"><span class="empty-i">🔍</span>Nenhum resultado</div>';return;}
-  var h='';
-  if(!q){
-    var catKeys=Object.keys(CATS);
-    for(var c=0;c<catKeys.length;c++){
-      var cat=catKeys[c];
-      var catDocs=[];for(var i=0;i<f.length;i++){if(f[i].cat===cat)catDocs.push(f[i]);}
-      if(!catDocs.length)continue;
-      h+='<div style="font-size:11px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;margin:10px 0 7px;padding:0 2px">'+CATS[cat]+'</div>';
-      for(var i=0;i<catDocs.length;i++){h+=docItemHTML(catDocs[i]);}
-    }
+function toggleRec(){
+  if(isRec){
+    pararRec();
   }else{
-    for(var i=0;i<f.length;i++){h+=docItemHTML(f[i]);}
+    iniciarRec();
   }
-  el.innerHTML=h;
 }
-function docItemHTML(d){
-  var n=dUsos[d.id]||0;
-  return '<div class="doc-item" onclick="selecionarDoc(\''+d.id+'\')"><div class="doc-icon-box">'+d.icon+'</div><div style="flex:1"><div style="font-size:14px;font-weight:500;color:var(--tx)">'+d.nome+'</div><div style="font-size:12px;color:var(--mt)">'+d.desc+(n?' · '+n+'x':'')+'</div></div><div style="color:var(--pp);font-size:18px">›</div></div>';
-}
-function selecionarDoc(id){
-  closeDocModal();
-  dUsos[id]=(dUsos[id]||0)+1;S.set('du',dUsos);
-  gerarDoc(id);
-}
-function gerarDoc(id){
-  docAtual=id;
-  var pid=document.getElementById('doc-pac').value;
-  var p=findPac(pid)||{nome:'Paciente',abordagem:'',obs:''};
-  var ps=[];for(var i=0;i<sess.length;i++){if(sess[i].pacId===pid)ps.push(sess[i]);}
-  ps.sort(function(a,b){return b.data.localeCompare(a.data);});
-  var hist='';
-  for(var i=0;i<Math.min(ps.length,8);i++){
-    hist+='['+ps[i].data+'-'+ps[i].tipoSessao+']: '+ps[i].texto+(ps[i].resumoIA?' IA:'+ps[i].resumoIA.substring(0,80):'')+' | ';
-  }
-  if(hist.length>3500)hist=hist.substring(0,3500);
-  var cfg=S.get('cfg')||{};
-  var prof=cfg.nome?cfg.nome+(cfg.crp?', CRP '+cfg.crp:''):'Psicóloga';
-  var ctx='Prof:'+prof+' Pac:'+p.nome+' Abord:'+(p.abordagem||'?')+' Sess:'+ps.length+' CID:'+(p.cid||'?')+' Hist:'+hist;
-  var d=findDoc(id)||{nome:id,icon:'📄'};
-  var pr={
-    prontuario:'Gere PRONTUÁRIO PSICOLÓGICO completo formal em português. Seções: identificação, queixa, histórico, evolução, intervenções, estado atual, plano. Assine: '+prof+'. Dados: '+ctx,
-    relatorio:'Gere RELATÓRIO PSICOLÓGICO formal. Identificação, demanda, procedimentos, resultados, conclusão, recomendações. Assine: '+prof+'. Dados: '+ctx,
-    declaracao:'Gere DECLARAÇÃO PSICOLÓGICA formal para '+p.nome+'. Acompanhamento, período, sessões. Assine: '+prof+'. Dados: '+ctx,
-    parecer:'Gere PARECER PSICOLÓGICO estruturado. Objeto, análise, conclusões, recomendações. Assine: '+prof+'. Dados: '+ctx,
-    devolutiva:'Gere DEVOLUTIVA para pais/escola de '+p.nome+'. Linguagem acessível, avaliação, progresso, recomendações. Assine: '+prof+'. Dados: '+ctx,
-    encaminhamento:'Gere ENCAMINHAMENTO para '+p.nome+'. Identificação, motivo, histórico, pedido de avaliação. Assine: '+prof+'. Dados: '+ctx,
-    relatorio_escolar:'Gere RELATÓRIO ESCOLAR para '+p.nome+'. Perfil, comportamento, aprendizagem, recomendações pedagógicas. Assine: '+prof+'. Dados: '+ctx,
-    relatorio_tea:'Gere RELATÓRIO TEA/NEURODIVERSIDADE para '+p.nome+'. Perfil, pontos fortes, desafios, suporte. Assine: '+prof+'. Dados: '+ctx,
-    relatorio_tdah:'Gere RELATÓRIO TDAH para '+p.nome+'. Perfil atencional, impacto, estratégias. Assine: '+prof+'. Dados: '+ctx,
-    neuropediatra:'Gere RELATÓRIO PARA NEUROPEDIATRA sobre '+p.nome+'. Linguagem técnica, histórico, evolução. Assine: '+prof+'. Dados: '+ctx,
-    psiquiatra:'Gere RELATÓRIO PARA PSIQUIATRA sobre '+p.nome+'. Quadro atual, evolução, recomendações. Assine: '+prof+'. Dados: '+ctx,
-    medico_geral:'Gere RELATÓRIO PARA MÉDICO sobre '+p.nome+'. Aspectos psicológicos relevantes. Assine: '+prof+'. Dados: '+ctx,
-    fonoaudiologo:'Gere RELATÓRIO PARA FONOAUDIÓLOGO sobre '+p.nome+'. Aspectos emocionais, cognitivos. Assine: '+prof+'. Dados: '+ctx,
-    convenio:'Gere RELATÓRIO PARA PLANO DE SAÚDE. CID-11, evolução, justificativa. Assine: '+prof+'. Dados: '+ctx,
-    evolucao_convenio:'Gere RELATÓRIO DE EVOLUÇÃO para convênio. Objetivos, progressos, ajustes. Assine: '+prof+'. Dados: '+ctx,
-    atestado:'Gere ATESTADO PSICOLÓGICO para '+p.nome+'. Acompanhamento, finalidade, período. Assine: '+prof+'. Dados: '+ctx,
-    alta:'Gere ALTA TERAPÊUTICA para '+p.nome+'. Objetivos alcançados, estado atual, orientações. Assine: '+prof+'. Dados: '+ctx,
-    evolucao_mensal:'Gere EVOLUÇÃO MENSAL para '+p.nome+'. Objetivos, progressos, desafios, metas. Assine: '+prof+'. Dados: '+ctx,
-    orientacao_familiar:'Gere ORIENTAÇÕES FAMILIARES para família de '+p.nome+'. Linguagem acessível, orientações práticas. Assine: '+prof+'. Dados: '+ctx,
-    relatorio_judicial:'Gere RELATÓRIO PSICOLÓGICO PARA JUSTIÇA sobre '+p.nome+'. Linguagem técnico-jurídica. Seções: identificação, metodologia, histórico, análise, conclusões, recomendações ao juízo. Observar ética CFP. Assine: '+prof+'. Dados: '+ctx,
-    laudo_judicial:'Gere LAUDO PSICOLÓGICO JUDICIAL sobre '+p.nome+'. Documento pericial formal. Identificação, finalidade, metodologia, histórico, avaliação, conclusões periciais. Assine: '+prof+'. Dados: '+ctx,
-    relatorio_guarda:'Gere RELATÓRIO PARA VARA DE FAMÍLIA sobre '+p.nome+'. Guarda/tutela/adoção. Contexto familiar, avaliação, dinâmica familiar, melhor interesse da criança. Assine: '+prof+'. Dados: '+ctx,
-    relatorio_violencia:'Gere RELATÓRIO VIOLÊNCIA/PROTEÇÃO sobre '+p.nome+'. Para Conselho Tutelar/CREAS. Situação, avaliação de risco, medidas protetivas, encaminhamentos. Assine: '+prof+'. Dados: '+ctx,
-    declaracao_judicial:'Gere DECLARAÇÃO PARA PROCESSO JUDICIAL sobre '+p.nome+'. Objetiva, fundamentada, ética CFP. Assine: '+prof+'. Dados: '+ctx,
-    enc_caps:'Gere ENCAMINHAMENTO PARA CAPS sobre '+p.nome+'. Motivo, histórico, urgência, serviço indicado. Assine: '+prof+'. Dados: '+ctx,
-    enc_assistencia:'Gere ENCAMINHAMENTO ASSISTÊNCIA SOCIAL de '+p.nome+'. CRAS/CREAS, motivo, necessidades, serviços. Assine: '+prof+'. Dados: '+ctx,
-    relatorio_bpc:'Gere RELATÓRIO BPC/LOAS sobre '+p.nome+'. Diagnóstico, CID, comprometimento, justificativa. Assine: '+prof+'. Dados: '+ctx,
-    relatorio_inss:'Gere RELATÓRIO PARA INSS sobre '+p.nome+'. Diagnóstico, CID, impacto laboral, período afastamento. Assine: '+prof+'. Dados: '+ctx
-  };
-  var card=document.getElementById('doc-res-card');
-  card.style.display='block';
-  document.getElementById('doc-res-title').textContent=d.icon+' '+d.nome;
-  document.getElementById('doc-res-meta').textContent=p.nome+' · '+new Date().toLocaleDateString('pt-BR');
-  document.getElementById('doc-acts').style.display='none';
-  document.getElementById('doc-res').style.display='none';
-  document.getElementById('doc-ld').style.display='flex';
-  card.scrollIntoView({behavior:'smooth',block:'start'});
-  var prompt=pr[id]||'Gere documento "'+id+'" para '+p.nome+'. Assine: '+prof+'. '+ctx;
-  callIA(prompt,1500,function(r){
-    document.getElementById('doc-ld').style.display='none';
-    document.getElementById('doc-res').style.display='block';
-    document.getElementById('doc-res').textContent=r;
-    document.getElementById('doc-acts').style.display='flex';
-  },function(e){
-    document.getElementById('doc-ld').style.display='none';
-    document.getElementById('doc-res').style.display='block';
-    document.getElementById('doc-res').textContent='⚠️ '+e;
+
+function iniciarRec(){
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    recStream=stream;
+    isRec=true;
+    recSecs2=0;
+    audioChunks2=[];
+    
+    // UI
+    document.getElementById('rec-btn').textContent='⏹ Parar gravação';
+    document.getElementById('rec-btn').style.background='#ef4444';
+    document.getElementById('rec-timer').style.display='block';
+    document.getElementById('rec-timer').textContent='00:00';
+    document.getElementById('rec-pulse').style.display='inline-block';
+    document.getElementById('rec-limpar').style.display='inline-block';
+    document.getElementById('transcr').style.display='block';
+    document.getElementById('transcr').innerHTML='<span style="color:var(--mt);font-style:italic">🎙️ Gravando... clique PARAR para transcrever.</span>';
+    showRecSt('🔴 Gravando... Clique PARAR quando terminar.');
+    
+    // Timer
+    recTimer=setInterval(function(){
+      recSecs2++;
+      var m=String(Math.floor(recSecs2/60)).padStart(2,'0');
+      var s2=String(recSecs2%60).padStart(2,'0');
+      document.getElementById('rec-timer').textContent=m+':'+s2;
+    },1000);
+    
+    // MediaRecorder
+    var mime='audio/webm';
+    if(!MediaRecorder.isTypeSupported(mime))mime='audio/mp4';
+    if(!MediaRecorder.isTypeSupported(mime))mime='';
+    
+    try{
+      mediaRec2=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+    }catch(e){
+      mediaRec2=new MediaRecorder(stream);
+    }
+    
+    mediaRec2.ondataavailable=function(e){
+      if(e.data&&e.data.size>0){
+        audioChunks2.push(e.data);
+      }
+    };
+    
+    mediaRec2.onstop=function(){
+      // Para o timer
+      clearInterval(recTimer);
+      recTimer=null;
+      
+      // Para stream
+      if(recStream){
+        recStream.getTracks().forEach(function(t){t.stop();});
+        recStream=null;
+      }
+      
+      // UI parado
+      document.getElementById('rec-btn').textContent='▶ Nova gravação';
+      document.getElementById('rec-btn').style.background='var(--pp)';
+      document.getElementById('rec-pulse').style.display='none';
+      
+      // Transcreve
+      if(audioChunks2.length>0){
+        showRecSt('⏳ Transcrevendo com IA...');
+        document.getElementById('transcr').innerHTML='<span style="color:var(--mt)">⏳ Transcrevendo...</span>';
+        
+        var mimeType=audioChunks2[0].type||'audio/webm';
+        var ext='webm';
+        if(mimeType.indexOf('mp4')>=0)ext='mp4';
+        if(mimeType.indexOf('ogg')>=0)ext='ogg';
+        
+        var blob=new Blob(audioChunks2,{type:mimeType});
+        var file=new File([blob],'sessao.'+ext,{type:mimeType});
+        var form=new FormData();
+        form.append('file',file);
+        form.append('model','whisper-large-v3');
+        form.append('language','pt');
+        form.append('response_format','text');
+        
+        var xhr=new XMLHttpRequest();
+        xhr.open('POST','https://api.groq.com/openai/v1/audio/transcriptions',true);
+        xhr.setRequestHeader('Authorization','Bearer '+GROQ);
+        xhr.timeout=60000;
+        
+        xhr.onload=function(){
+          if(xhr.status===200){
+            txt=xhr.responseText.trim();
+            document.getElementById('transcr').innerHTML=txt;
+            document.getElementById('sess-txt').value=txt;
+            var wc=txt.split(' ').filter(function(w){return w;}).length;
+            showRecSt('✅ Transcrição concluída! ('+wc+' palavras)');
+          }else{
+            console.error('Whisper erro:',xhr.status,xhr.responseText);
+            showRecSt('⚠️ Erro ao transcrever. Escreva as anotações manualmente.');
+            document.getElementById('transcr').innerHTML='';
+          }
+          audioChunks2=[];
+        };
+        
+        xhr.onerror=function(){
+          showRecSt('⚠️ Sem conexão. Escreva manualmente.');
+          audioChunks2=[];
+        };
+        
+        xhr.ontimeout=function(){
+          showRecSt('⚠️ Tempo esgotado. Escreva manualmente.');
+          audioChunks2=[];
+        };
+        
+        xhr.send(form);
+      }else{
+        showRecSt('⚠️ Nenhum áudio gravado. Tente novamente.');
+      }
+    };
+    
+    mediaRec2.start(500);
+    
+  }).catch(function(err){
+    toast('Permita o microfone nas configurações.','err');
+    showRecSt('⚠️ Permita o microfone e tente novamente.');
+    console.error('Mic erro:',err);
   });
 }
-function salvarDocHist(){
-  var tx=document.getElementById('doc-res').textContent;
-  if(!tx||!docAtual)return;
-  var pid=document.getElementById('doc-pac').value;
-  var p=findPac(pid)||{nome:'Paciente'};
-  var h={id:'h'+Date.now(),docId:docAtual,pacId:pid,pacNome:p.nome,texto:tx,data:new Date().toISOString()};
-  dHist.unshift(h);if(dHist.length>50)dHist=dHist.slice(0,50);
-  S.set('dh',dHist);renderDocHist();toast('Salvo!','ok');
-}
-function verDocHist(id){
-  var h=null;for(var i=0;i<dHist.length;i++){if(dHist[i].id===id)h=dHist[i];}
-  if(!h)return;
-  var d=findDoc(h.docId)||{icon:'📄',nome:h.docId};
-  var p=findPac(h.pacId)||{nome:h.pacNome||'Paciente'};
-  docAtual=h.docId;
-  var card=document.getElementById('doc-res-card');
-  card.style.display='block';
-  document.getElementById('doc-res-title').textContent=d.icon+' '+d.nome;
-  document.getElementById('doc-res-meta').textContent=p.nome+' · '+new Date(h.data).toLocaleDateString('pt-BR');
-  document.getElementById('doc-ld').style.display='none';
-  document.getElementById('doc-res').style.display='block';
-  document.getElementById('doc-res').textContent=h.texto;
-  document.getElementById('doc-acts').style.display='flex';
-  card.scrollIntoView({behavior:'smooth'});
-}
-function exportPDF(){
-  var tx=document.getElementById('doc-res').textContent;
-  if(!tx){toast('Gere um documento primeiro.','err');return;}
-  var cfg=S.get('cfg')||{};
-  var w=window.open('','_blank');
-  w.document.write('<html><head><title>PsiOn</title><style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:40px;color:#1a1a2e;line-height:1.8;font-size:14px}.hdr{display:flex;justify-content:space-between;margin-bottom:28px;padding-bottom:16px;border-bottom:3px solid #534AB7}.logo{font-size:22px;font-weight:bold;color:#534AB7}.prof{text-align:right;font-size:13px;color:#6b7280}.tit{background:#EEEDFE;padding:14px 18px;border-radius:8px;margin-bottom:20px;border-left:4px solid #534AB7}pre{white-space:pre-wrap;font-family:Georgia,serif;font-size:14px;line-height:1.8}.ftr{margin-top:48px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;text-align:center}</style></head><body>');
-  w.document.write('<div class="hdr"><div><div class="logo">PsiOn</div><div style="font-size:12px;color:#9ca3af">Prontuário Inteligente</div></div><div class="prof"><div>'+(cfg.nome||'Psicóloga')+'</div><div>'+(cfg.crp?'CRP '+cfg.crp:'')+'</div><div>'+(cfg.clinica||'')+'</div><div>'+new Date().toLocaleDateString('pt-BR')+'</div></div></div>');
-  w.document.write('<div class="tit"><strong>'+document.getElementById('doc-res-title').textContent+'</strong><br><span style="color:#6b7280;font-size:12px">'+document.getElementById('doc-res-meta').textContent+'</span></div>');
-  w.document.write('<pre>'+tx.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</pre>');
-  w.document.write('<div class="ftr">PsiOn · '+new Date().toLocaleString('pt-BR')+'</div></body></html>');
-  w.document.close();setTimeout(function(){w.print();},600);
-  toast('Abrindo para imprimir/PDF!','ok');
-}
 
-// AGENDA
-function renderCal(){
-  var meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  document.getElementById('cal-sub').textContent=meses[calM]+' '+calY;
-  var labels=document.getElementById('cal-labels');
-  labels.innerHTML=['D','S','T','Q','Q','S','S'].map(function(d){return '<div class="cal-label">'+d+'</div>';}).join('');
-  var grid=document.getElementById('cal-grid');
-  grid.innerHTML='';
-  var hoje=new Date();
-  var primeiro=new Date(calY,calM,1);
-  var ultimo=new Date(calY,calM+1,0);
-  for(var i=0;i<primeiro.getDay();i++){
-    var prev=new Date(calY,calM,1-primeiro.getDay()+i);
-    grid.innerHTML+='<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--bd)">'+prev.getDate()+'</div>';
-  }
-  for(var d=1;d<=ultimo.getDate();d++){
-    var ds=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    var isT=hoje.getDate()===d&&hoje.getMonth()===calM&&hoje.getFullYear()===calY;
-    var hasE=false;for(var j=0;j<cons.length;j++){if(cons[j].data===ds){hasE=true;break;}}
-    var cls='cal-day'+(isT?' today':'')+(hasE?' has-ev':'');
-    grid.innerHTML+='<div class="'+cls+'" onclick="verDia(\''+ds+'\')">'+d+'</div>';
+function pararRec(){
+  isRec=false;
+  if(mediaRec2&&mediaRec2.state==='recording'){
+    mediaRec2.stop();
+  }else{
+    clearInterval(recTimer);
+    recTimer=null;
+    if(recStream){recStream.getTracks().forEach(function(t){t.stop();});recStream=null;}
+    document.getElementById('rec-btn').textContent='▶ Nova gravação';
+    document.getElementById('rec-btn').style.background='var(--pp)';
+    document.getElementById('rec-pulse').style.display='none';
   }
 }
-function mudaMes(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
-function verDia(ds){
-  var el=document.getElementById('cal-dia');
-  var dt=new Date(ds+'T12:00');
-  document.getElementById('cal-dia-t').textContent=dt.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
-  var dayC=[];for(var i=0;i<cons.length;i++){if(cons[i].data===ds)dayC.push(cons[i]);}
-  dayC.sort(function(a,b){return a.hora.localeCompare(b.hora);});
-  var lista=document.getElementById('cal-dia-l');
-  if(dayC.length){
-    var h='';
-    for(var i=0;i<dayC.length;i++){
-      var c=dayC[i];
-      var p=findPac(c.pacId)||{nome:c.pacNome||'Paciente'};
-      h+='<div class="appt-row"><div class="appt-t">'+c.hora+'</div><div style="flex:1;cursor:pointer" onclick="abrirPac(\''+c.pacId+'\')"><div style="font-size:14px;font-weight:500">'+p.nome+'</div><div style="font-size:12px;color:var(--mt)">'+(c.tipo||'Sessão')+'</div></div><span class="badge '+(c.status==='confirmado'?'b-ok':'b-wt')+'">'+(c.status==='confirmado'?'OK':'Ag.')+'</span></div>';
-    }
-    lista.innerHTML=h;
-  }else{lista.innerHTML='<div class="empty" style="padding:14px"><span class="empty-i">📅</span>Nenhuma consulta</div>';}
-  el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+function finalizarRec(){} // kept for compatibility
+
+function limparRec(){
+  txt='';audioChunks2=[];
+  document.getElementById('transcr').innerHTML='';
+  document.getElementById('rec-status').style.display='none';
+  document.getElementById('sess-txt').value='';
 }
 
-// FINANCEIRO
-function renderFin(){
-  var m=new Date().getMonth(),y=new Date().getFullYear();
-  var pm=[],pd=[];
-  for(var i=0;i<pags.length;i++){
-    try{
-      var d=new Date(pags[i].data+'T12:00');
-      if(d.getMonth()===m&&d.getFullYear()===y){pm.push(pags[i]);}
-    }catch(e){}
-    if(pags[i].status==='pendente')pd.push(pags[i]);
-  }
-  var pagos=[];for(var i=0;i<pm.length;i++){if(pm[i].status==='pago')pagos.push(pm[i]);}
-  var tot=0;for(var i=0;i<pagos.length;i++)tot+=parseFloat(pagos[i].val)||0;
-  var pen=0;for(var i=0;i<pd.length;i++)pen+=parseFloat(pd[i].val)||0;
-  document.getElementById('fin-tot').textContent='R$'+tot.toLocaleString('pt-BR');
-  document.getElementById('fin-pend').textContent='R$'+pen.toLocaleString('pt-BR');
-  document.getElementById('fin-cnt').textContent=pagos.length;
-  var lista=document.getElementById('fin-lista');
-  pm.sort(function(a,b){return b.data.localeCompare(a.data);});
-  if(pm.length){
-    var h='';
-    for(var i=0;i<pm.length;i++){
-      var pg=pm[i];
-      var p=findPac(pg.pacId)||{nome:pg.pacNome||'Paciente'};
-      var ok=pg.status==='pago';
-      h+='<div class="tr"><div class="tr-ico" style="background:'+(ok?'var(--gr-l)':'var(--am-l)')+';color:'+(ok?'var(--gr)':'var(--am)')+';">'+(ok?'✓':'⏳')+'</div><div style="flex:1"><div style="font-size:14px;font-weight:500">'+p.nome+'</div><div style="font-size:12px;color:var(--mt)">'+new Date(pg.data+'T12:00').toLocaleDateString('pt-BR')+' · '+(pg.forma||'PIX')+'</div></div><div style="font-size:14px;font-weight:600;color:'+(ok?'var(--gr)':'var(--am)')+';">'+(ok?'+':'')+'R$'+pg.val+'</div></div>';
-    }
-    lista.innerHTML=h;
-  }else{lista.innerHTML='<div class="empty"><span class="empty-i">💰</span>Nenhuma movimentação</div>';}
-  var pendEl=document.getElementById('fin-pend-l');
-  if(pd.length){
-    var h='';
-    for(var i=0;i<pd.length;i++){
-      var pg=pd[i];
-      var p=findPac(pg.pacId)||{nome:pg.pacNome||'Paciente'};
-      h+='<div class="tr"><div class="tr-ico" style="background:var(--am-l);color:var(--am);">⏳</div><div style="flex:1"><div style="font-size:14px;font-weight:500">'+p.nome+'</div><div style="font-size:12px;color:var(--mt)">'+(pg.descricao||'Sessão')+' · '+(pg.forma||'PIX')+'</div></div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:14px;font-weight:600;color:var(--am)">R$'+pg.val+'</div><button onclick="marcarPago(\''+pg.id+'\')" style="background:var(--gr);color:white;border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif">Pago</button></div></div>';
-    }
-    pendEl.innerHTML=h;
-  }else{pendEl.innerHTML='<div class="empty"><span class="empty-i">✅</span>Nenhuma pendência</div>';}
-}
-function marcarPago(id){
-  for(var i=0;i<pags.length;i++){if(pags[i].id===id)pags[i].status='pago';}
-  saveL();renderFin();renderHome();toast('Pagamento confirmado!','ok');
+function showRecSt(m){
+  var el=document.getElementById('rec-status');
+  el.style.display='block';
+  el.textContent=m;
 }
 
-// CADASTRO
-function salvarPac(){
-  var nome=document.getElementById('c-nome').value.trim();
-  if(!nome){toast('Nome é obrigatório.','err');return;}
-  if(!document.getElementById('c-lgpd').checked){toast('Confirme a autorização LGPD.','err');return;}
-  var p={id:'p'+Date.now(),nome:nome,nascimento:document.getElementById('c-nasc').value||null,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,responsavel:document.getElementById('c-resp').value,abordagem:document.getElementById('c-ab').value,tipo:document.getElementById('c-tipo').value,val:document.getElementById('c-val').value||null,pagamento:document.getElementById('c-pag').value,cid:document.getElementById('c-cid').value,obs:document.getElementById('c-obs').value};
-  pacs.unshift(p);saveL();
-  var ids=['c-nome','c-nasc','c-tel','c-email','c-resp','c-val','c-cid','c-obs'];
-  for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el)el.value='';}
-  document.getElementById('c-lgpd').checked=false;
-  toast('✅ '+nome+' cadastrado!','ok');
-  pac=p;goSc('pron');
-}
-
-// CONFIG
-function salvarCfg(){
-  var cfg={nome:document.getElementById('cfg-nome').value,crp:document.getElementById('cfg-crp').value,esp:document.getElementById('cfg-esp').value,clinica:document.getElementById('cfg-clinica').value};
-  S.set('cfg',cfg);
-  toast('Configurações salvas!','ok');
-}
-
-// MODAIS
-function openM(id){
-  var m=document.getElementById(id);if(!m)return;
-  if(id==='m-consulta'){
-    var h='';for(var i=0;i<pacs.length;i++){h+='<option value="'+pacs[i].id+'">'+pacs[i].nome+'</option>';}
-    document.getElementById('mc-pac').innerHTML=h||'<option>Sem pacientes</option>';
-    document.getElementById('mc-data').value=new Date().toISOString().split('T')[0];
-  }
-  if(id==='m-pag'){
-    var h='';for(var i=0;i<pacs.length;i++){h+='<option value="'+pacs[i].id+'">'+pacs[i].nome+'</option>';}
-    document.getElementById('mp-pac').innerHTML=h||'<option>Sem pacientes</option>';
-    document.getElementById('mp-data').value=new Date().toISOString().split('T')[0];
-  }
-  m.style.display='flex';setTimeout(function(){m.classList.add('open');},10);
-}
-function closeM(id){var m=document.getElementById(id);if(!m)return;m.classList.remove('open');setTimeout(function(){m.style.display='none';},200);}
-function salvarConsulta(){
-  var pid=document.getElementById('mc-pac').value;
-  var p=findPac(pid);
-  var c={id:'c'+Date.now(),pacId:pid,pacNome:p?p.nome:'Paciente',data:document.getElementById('mc-data').value,hora:document.getElementById('mc-hora').value,tipo:document.getElementById('mc-tipo').value,status:document.getElementById('mc-status').value};
-  cons.unshift(c);saveL();closeM('m-consulta');renderHome();renderCal();toast('Consulta agendada!','ok');
-}
-function salvarPag(){
-  var pid=document.getElementById('mp-pac').value;
-  var p=findPac(pid);
-  var pg={id:'pg'+Date.now(),pacId:pid,pacNome:p?p.nome:'Paciente',val:document.getElementById('mp-val').value||0,data:document.getElementById('mp-data').value,forma:document.getElementById('mp-forma').value,status:document.getElementById('mp-status').value,descricao:document.getElementById('mp-desc').value};
-  pags.unshift(pg);saveL();closeM('m-pag');renderFin();renderHome();toast('Pagamento registrado!','ok');
-}
 
 // IA CALL
 function callIA(prompt,maxTok,onOk,onErr){
@@ -1243,6 +997,7 @@ window.onload=function(){
   var u=S.get('user');
   if(u&&u.uid){uid=u.uid;entrar();}
 };
+
 </script>
 </body>
 </html>
